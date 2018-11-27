@@ -1,5 +1,5 @@
 /*
- * Programmer: Kyle Kloberdanz
+ * Author: Kyle Kloberdanz
  * Date Created: 27 Nov 2018
  * License: GNU GPLv3 (see LICENSE.txt)
  * File: studder.c
@@ -10,6 +10,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
+
+
+volatile char author[] = "Author: Kyle Kloberdanz";
+volatile char license[] = "License: GNU GPLv3";
 
 
 typedef int64_t number;
