@@ -4,6 +4,9 @@
 #include <stdarg.h>
 #include <ctype.h>
 
+
+#include "stutter.h"
+
 int yylex();
 void yyerror(const char *s);
 %}
@@ -24,7 +27,7 @@ expr        : '+' expr expr              { $$ = $2 + $3 ; }
             | '*' expr expr              { $$ = $2 * $3 ; }
             | '/' expr expr              { $$ = $2 / $3 ; }
             | sexpr
-            | NUMBER
+            | NUMBER                     { $$ = make_number_obj($1) ; }
             ;
 
 %%
