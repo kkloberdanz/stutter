@@ -44,14 +44,14 @@ ASTNode *make_ast_node(ASTkind kind,
 
     switch (kind) {
         case LEAF:
-            node-> obj = obj;
+            node->obj = obj;
             node->op = op;
             node->left = NULL;
             node->right = NULL;
             break;
 
         case CONDITIONAL:
-            node-> obj = NULL;
+            node->obj = NULL;
             node->op = NOOP;
             node->left = left_node; /* the true path */
             node->condition = condition; /* the expr to evaluate */

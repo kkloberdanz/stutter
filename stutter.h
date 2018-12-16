@@ -32,8 +32,10 @@ typedef enum {
 
 typedef enum {
     NOOP,
-    PLUS,
-    MINUS
+    ADD,
+    SUB,
+    MUL,
+    DIV
 } Operator;
 
 
@@ -60,13 +62,16 @@ typedef struct ASTNode {
 
 /* constructors */
 StutterObject *make_number_obj(number);
+
 ASTNode *make_ast_node(ASTkind, /* base constructor */
                        StutterObject *,
                        Operator,
                        ASTNode *,
                        ASTNode *,
                        ASTNode *);
+
 ASTNode *make_leaf_node(StutterObject *); /* just holds stutter object */
+
 ASTNode *make_operator_node(Operator,  /* holds operator and child items */
                             ASTNode *, /* to operate on */
                             ASTNode *);

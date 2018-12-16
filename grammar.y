@@ -22,12 +22,12 @@ lines       : lines sexpr '\n'           { printf("%d\n", $2) ; }
 sexpr       : '(' expr ')'               { $$ = $2 ; }
             ;
 
-expr        : '+' expr expr              { $$ = $2 + $3 ; }
-            | '-' expr expr              { $$ = $2 - $3 ; }
-            | '*' expr expr              { $$ = $2 * $3 ; }
-            | '/' expr expr              { $$ = $2 / $3 ; }
+expr        : '+' expr expr              { $$ = make_operator_node(ADD, $2, $3) ; }
+            | '-' expr expr              { $$ = make_operator_node(SUB, $2, $3) ; }
+            | '*' expr expr              { $$ = make_operator_node(MUL, $2, $3) ; }
+            | '/' expr expr              { $$ = make_operator_node(DIV, $2, $3) ; }
             | sexpr
-            | NUMBER                     { $$ = make_number_obj($1) ; }
+            | NUMBER                     { $$ = make_leaf_node(make_number_obj($1)) ; }
             ;
 
 %%
