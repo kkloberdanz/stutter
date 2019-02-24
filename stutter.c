@@ -178,8 +178,8 @@ int emit(FILE *output, ASTNode *node) {
             break;
 
         case OPERATOR:
-            exit_code = exit_code || emit(output, node->left);
             exit_code = exit_code || emit(output, node->right);
+            exit_code = exit_code || emit(output, node->left);
             fprintf(output, "%s\n", get_op_str(node->op));
             break;
 
