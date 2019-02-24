@@ -171,16 +171,17 @@ void emit(FILE *output, ASTNode *node) {
     switch (node->kind) {
         case CONDITIONAL:
             fprintf(stderr, "CONDITIONAL not implemented");
+            exit(EXIT_FAILURE);
             break;
 
         case OPERATOR:
-            fprintf(output, "%s\n", get_op_str(node->op));
             emit(output, node->left);
             emit(output, node->right);
+            fprintf(output, "%s\n", get_op_str(node->op));
             break;
 
         case LEAF:
-            fprintf(output, "%s\n", get_op_val(node->obj));
+            fprintf(output, "PUSH\n%s\n", get_op_val(node->obj));
             break;
 
         default:

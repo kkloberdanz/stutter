@@ -3,4 +3,4 @@ CFLAGS=-Og -g
 
 parser:
 	yacc grammar.y
-	$(CC) -o grammar y.tab.c stutter.c -ly -Wall -Wextra $(CFLAGS)
+	$(CC) -o stutter y.tab.c stutter.c -ly -Wall -Wextra $(CFLAGS)
