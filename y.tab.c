@@ -1208,43 +1208,43 @@ yyreduce:
     {
         case 2:
 #line 24 "grammar.y" /* yacc.c:1646  */
-    { puts("lines"); tree = (yyvsp[0]) ; }
+    { tree = (yyvsp[0]) ; }
 #line 1213 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 3:
 #line 27 "grammar.y" /* yacc.c:1646  */
-    { puts("sexpr"); (yyval) = (yyvsp[-1]) ; }
+    { (yyval) = (yyvsp[-1]) ; }
 #line 1219 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 4:
 #line 30 "grammar.y" /* yacc.c:1646  */
-    { puts("expr"); (yyval) = make_operator_node(ADD, (yyvsp[-1]), (yyvsp[0])) ; }
+    { (yyval) = make_operator_node(ADD, (yyvsp[-1]), (yyvsp[0])) ; }
 #line 1225 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 5:
 #line 31 "grammar.y" /* yacc.c:1646  */
-    { puts("expr"); (yyval) = make_operator_node(SUB, (yyvsp[-1]), (yyvsp[0])) ; }
+    { (yyval) = make_operator_node(SUB, (yyvsp[-1]), (yyvsp[0])) ; }
 #line 1231 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 6:
 #line 32 "grammar.y" /* yacc.c:1646  */
-    { puts("expr"); (yyval) = make_operator_node(MUL, (yyvsp[-1]), (yyvsp[0])) ; }
+    { (yyval) = make_operator_node(MUL, (yyvsp[-1]), (yyvsp[0])) ; }
 #line 1237 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 7:
 #line 33 "grammar.y" /* yacc.c:1646  */
-    { puts("expr"); (yyval) = make_operator_node(DIV, (yyvsp[-1]), (yyvsp[0])) ; }
+    { (yyval) = make_operator_node(DIV, (yyvsp[-1]), (yyvsp[0])) ; }
 #line 1243 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 9:
 #line 35 "grammar.y" /* yacc.c:1646  */
-    { puts("expr"); (yyval) = make_leaf_node(make_number_obj((yyvsp[0]))) ; }
+    { (yyval) = make_leaf_node(make_number_obj((yyvsp[0]))) ; }
 #line 1249 "y.tab.c" /* yacc.c:1646  */
     break;
 
@@ -1483,17 +1483,13 @@ yyreturn:
 
 ASTNode *parse(void) {
     yyparse();
-    puts("returning tree");
     return tree;
 }
 
 
 int yylex() {
     int c;
-    puts("lexing");
     while ((c = getchar()) == ' ');
-    puts("done");
-    printf("c = %c\n", c);
     if ((c == '.') || (isdigit(c))) {
         ungetc(c, stdin);
         scanf("%d", &yylval);

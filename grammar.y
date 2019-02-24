@@ -21,18 +21,18 @@ static ASTNode *tree = NULL;
 %token NUMBER
 
 %%
-lines       : sexpr                      { puts("lines"); tree = $1 ; }
+lines       : sexpr                      { tree = $1 ; }
             ;
 
-sexpr       : '(' expr ')'               { puts("sexpr"); $$ = $2 ; }
+sexpr       : '(' expr ')'               { $$ = $2 ; }
             ;
 
-expr        : '+' expr expr              { puts("expr"); $$ = make_operator_node(ADD, $2, $3) ; }
-            | '-' expr expr              { puts("expr"); $$ = make_operator_node(SUB, $2, $3) ; }
-            | '*' expr expr              { puts("expr"); $$ = make_operator_node(MUL, $2, $3) ; }
-            | '/' expr expr              { puts("expr"); $$ = make_operator_node(DIV, $2, $3) ; }
+expr        : '+' expr expr              { $$ = make_operator_node(ADD, $2, $3) ; }
+            | '-' expr expr              { $$ = make_operator_node(SUB, $2, $3) ; }
+            | '*' expr expr              { $$ = make_operator_node(MUL, $2, $3) ; }
+            | '/' expr expr              { $$ = make_operator_node(DIV, $2, $3) ; }
             | sexpr
-            | NUMBER                     { puts("expr"); $$ = make_leaf_node(make_number_obj($1)) ; }
+            | NUMBER                     { $$ = make_leaf_node(make_number_obj($1)) ; }
             ;
 
 %%
@@ -40,17 +40,13 @@ expr        : '+' expr expr              { puts("expr"); $$ = make_operator_node
 
 ASTNode *parse(void) {
     yyparse();
-    puts("returning tree");
     return tree;
 }
 
 
 int yylex() {
     int c;
-    puts("lexing");
     while ((c = getchar()) == ' ');
-    puts("done");
-    printf("c = %c\n", c);
     if ((c == '.') || (isdigit(c))) {
         ungetc(c, stdin);
         scanf("%d", &yylval);

@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <string.h>
 
 
 #include "stutter.h"
@@ -34,7 +35,6 @@ ASTNode *make_ast_node(ASTkind kind,
                        ASTNode *condition,
                        ASTNode *right_node) {
 
-    puts("making node");
     ASTNode *node;
     if ((node = (ASTNode *)malloc(sizeof(ASTNode))) == NULL) {
         fprintf(stderr, "failed to allocate memory");
@@ -124,19 +124,63 @@ void destroy_ast_node(ASTNode *node) {
 }
 
 
+char *get_op_str(Operator op) {
+    char *str = NULL;
+    switch (op) {
+        case ADD:
+            str = "ADD";
+            break;
+
+        case SUB:
+            str = "SUB";
+            break;
+
+        case MUL:
+            str = "MUL";
+            break;
+
+        case DIV:
+            str = "DIV";
+            break;
+
+        case NOOP:
+            str = "NOOP";
+            break;
+    }
+    return str;
+}
+
+
+char *get_op_val(StutterObject *obj) {
+    char *str = (char*)malloc(100);
+    switch (obj->type) {
+        case NUMBER_TYPE:
+            sprintf(str, "%ld", obj->value.number_value);
+            break;
+
+        default:
+            fprintf(stderr, "unhandled case: %d\n", obj->type);
+            exit(EXIT_FAILURE);
+    }
+    return str;
+}
+
+
 /* code generation */
 void emit(FILE *output, ASTNode *node) {
-    puts("emitting");
     switch (node->kind) {
         case CONDITIONAL:
             fprintf(stderr, "CONDITIONAL not implemented");
             break;
 
         case OPERATOR:
+            fprintf(output, "%s\n", get_op_str(node->op));
+            emit(output, node->left);
+            emit(output, node->right);
             break;
 
         case LEAF:
-            fprintf(stderr, "LEAF not implemented");
+            fprintf(output, "%s\n", get_op_val(node->obj));
             break;
 
         default:
@@ -146,10 +190,15 @@ void emit(FILE *output, ASTNode *node) {
 }
 
 
-int main(void) {
-    puts("starting");
-    ASTNode *tree = parse();
-    emit(stdout, tree);
-    puts("done parsing");
-    return 0;
+int main(int argc, char **argv) {
+    if (argc != 2) {
+        fprintf(stderr, "usage: %s FILENAME\n", argv[0]);
+        return 1;
+    } else {
+        ASTNode *tree = parse();
+        char *output_filename = argv[1];
+        FILE *output = fopen(output_filename, "w");
+        emit(output, tree);
+        return 0;
+    }
 }
