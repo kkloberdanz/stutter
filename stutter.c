@@ -206,9 +206,9 @@ int main(int argc, char **argv) {
         ASTNode *tree = parse();
         char *output_filename = argv[1];
         FILE *output = fopen(output_filename, "w");
-        emit(output, tree);
+        int exit_code = emit(output, tree);
         fclose(output);
         destroy_ast_node(tree);
-        return 0;
+        return exit_code;
     }
 }
