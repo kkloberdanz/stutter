@@ -207,6 +207,7 @@ int main(int argc, char **argv) {
         char *output_filename = argv[1];
         FILE *output = fopen(output_filename, "w");
         int exit_code = emit(output, tree);
+        fprintf(output, "%s\n", "999999"); /* halt instruction */
         fclose(output);
         destroy_ast_node(tree);
         return exit_code;
