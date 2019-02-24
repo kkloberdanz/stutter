@@ -125,16 +125,14 @@ void destroy_ast_node(ASTNode *node) {
 
 
 /* code generation */
-void emit(ASTNode *node) {
+void emit(FILE *output, ASTNode *node) {
     puts("emitting");
-    printf("node = %p\n", node);
     switch (node->kind) {
         case CONDITIONAL:
             fprintf(stderr, "CONDITIONAL not implemented");
             break;
 
         case OPERATOR:
-            fprintf(stderr, "OPERATOR not implemented");
             break;
 
         case LEAF:
@@ -151,7 +149,7 @@ void emit(ASTNode *node) {
 int main(void) {
     puts("starting");
     ASTNode *tree = parse();
-    emit(tree);
+    emit(stdout, tree);
     puts("done parsing");
     return 0;
 }
