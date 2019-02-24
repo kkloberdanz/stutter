@@ -102,28 +102,31 @@ void destroy_ast_node(ASTNode *node) {
             node->obj = NULL;
         }
 
+        /* recursive call */
         if (node->condition) {
-            free(node->condition);
+            destroy_ast_node(node->condition);
             node->condition = NULL;
         }
 
         /* recursive call */
         if (node->left) {
             destroy_ast_node(node->left);
-            free(node->left);
             node->left = NULL;
         }
 
         /* recursive call */
         if (node->right) {
             destroy_ast_node(node->right);
-            free(node->right);
             node->right = NULL;
         }
+
+        free(node);
+        node = NULL;
     }
 }
 
 
+/* emitter helpers */
 char *get_op_str(Operator op) {
     char *str = NULL;
     switch (op) {
@@ -151,8 +154,7 @@ char *get_op_str(Operator op) {
 }
 
 
-char *get_op_val(StutterObject *obj) {
-    char *str = (char*)malloc(100);
+char *get_op_val(char *str, StutterObject *obj) {
     switch (obj->type) {
         case NUMBER_TYPE:
             sprintf(str, "%ld", obj->value.number_value);
@@ -167,27 +169,32 @@ char *get_op_val(StutterObject *obj) {
 
 
 /* code generation */
-void emit(FILE *output, ASTNode *node) {
+int emit(FILE *output, ASTNode *node) {
+    int exit_code = 0;
     switch (node->kind) {
         case CONDITIONAL:
             fprintf(stderr, "CONDITIONAL not implemented");
-            exit(EXIT_FAILURE);
+            exit_code = 1;
             break;
 
         case OPERATOR:
-            emit(output, node->left);
-            emit(output, node->right);
+            exit_code = exit_code || emit(output, node->left);
+            exit_code = exit_code || emit(output, node->right);
             fprintf(output, "%s\n", get_op_str(node->op));
             break;
 
         case LEAF:
-            fprintf(output, "PUSH\n%s\n", get_op_val(node->obj));
+        {
+            char val[100];
+            fprintf(output, "PUSH\n%s\n", get_op_val(val, node->obj));
             break;
+        }
 
         default:
             fprintf(stderr, "unknown ASTNode kind in emit: %d\n", node->kind);
-            exit(EXIT_FAILURE);
+            exit_code = 1;
     }
+    return exit_code;
 }
 
 
@@ -200,6 +207,8 @@ int main(int argc, char **argv) {
         char *output_filename = argv[1];
         FILE *output = fopen(output_filename, "w");
         emit(output, tree);
+        fclose(output);
+        destroy_ast_node(tree);
         return 0;
     }
 }
