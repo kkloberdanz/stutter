@@ -3,11 +3,12 @@
 
 
 #include <stdint.h>
+#include <stdlib.h>
 
 
 /* embedded strings */
-volatile char author[] = "Author: Kyle Kloberdanz";
-volatile char license[] = "License: GNU GPLv3";
+static volatile char author[] = "Author: Kyle Kloberdanz";
+static volatile char license[] = "License: GNU GPLv3";
 
 
 /* typdefs */
@@ -17,9 +18,9 @@ typedef double real;
 
 /* enums */
 typedef enum {
-    NUMBER,
-    REAL,
-    BOOL
+    NUMBER_TYPE,
+    REAL_TYPE,
+    BOOL_TYPE
 } StutterType;
 
 
@@ -81,6 +82,13 @@ ASTNode *make_operator_node(Operator,  /* holds operator and child items */
 /* destructors */
 void destroy_obj(StutterObject *);
 void destroy_ast_node(ASTNode *);
+void emit(ASTNode *);
+
+
+/* code generation */
+/*
+void emit(FILE *, ASTNode *);
+*/
 
 
 #endif /* STUTTER_H */

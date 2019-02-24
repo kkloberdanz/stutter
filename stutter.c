@@ -2,7 +2,7 @@
  * Author: Kyle Kloberdanz
  * Date Created: 27 Nov 2018
  * License: GNU GPLv3 (see LICENSE.txt)
- * File: studder.c
+ * File: stutter.c
  */
 
 
@@ -21,7 +21,7 @@ StutterObject *make_number_obj(number n) {
         fprintf(stderr, "failed to allocate memory");
         exit(EXIT_FAILURE);
     }
-    obj->type = NUMBER;
+    obj->type = NUMBER_TYPE;
     obj->value.number_value = n;
     return obj;
 }
@@ -34,6 +34,7 @@ ASTNode *make_ast_node(ASTkind kind,
                        ASTNode *condition,
                        ASTNode *right_node) {
 
+    puts("making node");
     ASTNode *node;
     if ((node = (ASTNode *)malloc(sizeof(ASTNode))) == NULL) {
         fprintf(stderr, "failed to allocate memory");
@@ -47,6 +48,7 @@ ASTNode *make_ast_node(ASTkind kind,
             node->obj = obj;
             node->op = op;
             node->left = NULL;
+            node->condition = NULL;
             node->right = NULL;
             break;
 
@@ -56,6 +58,14 @@ ASTNode *make_ast_node(ASTkind kind,
             node->left = left_node; /* the true path */
             node->condition = condition; /* the expr to evaluate */
             node->right = right_node; /* the false path */
+            break;
+
+        case OPERATOR:
+            node->obj = NULL;
+            node->op = op;
+            node->left = left_node;
+            node->condition = NULL;
+            node->right = right_node;
             break;
 
         default:
@@ -114,6 +124,34 @@ void destroy_ast_node(ASTNode *node) {
 }
 
 
+/* code generation */
+void emit(ASTNode *node) {
+    puts("emitting");
+    printf("node = %p\n", node);
+    switch (node->kind) {
+        case CONDITIONAL:
+            fprintf(stderr, "CONDITIONAL not implemented");
+            break;
+
+        case OPERATOR:
+            fprintf(stderr, "OPERATOR not implemented");
+            break;
+
+        case LEAF:
+            fprintf(stderr, "LEAF not implemented");
+            break;
+
+        default:
+            fprintf(stderr, "unknown ASTNode kind in emit: %d\n", node->kind);
+            exit(EXIT_FAILURE);
+    }
+}
+
+
 int main(void) {
+    puts("starting");
+    ASTNode *tree = parse();
+    emit(tree);
+    puts("done parsing");
     return 0;
 }
