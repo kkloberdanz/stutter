@@ -32,7 +32,7 @@ typedef enum {
 
 
 typedef enum {
-    NOOP,
+    NOP,
     ADD,
     SUB,
     MUL,

@@ -3,3 +3,4 @@ a.out
 *.swo
 *.s
 stutter
+y.tab.c

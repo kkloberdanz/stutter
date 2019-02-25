@@ -54,7 +54,7 @@ ASTNode *make_ast_node(ASTkind kind,
 
         case CONDITIONAL:
             node->obj = NULL;
-            node->op = NOOP;
+            node->op = NOP;
             node->left = left_node; /* the true path */
             node->condition = condition; /* the expr to evaluate */
             node->right = right_node; /* the false path */
@@ -78,7 +78,7 @@ ASTNode *make_ast_node(ASTkind kind,
 
 
 ASTNode *make_leaf_node(StutterObject *obj) {
-    ASTNode *node = make_ast_node(LEAF, obj, NOOP, NULL, NULL, NULL);
+    ASTNode *node = make_ast_node(LEAF, obj, NOP, NULL, NULL, NULL);
     return node;
 }
 
@@ -146,8 +146,8 @@ char *get_op_str(Operator op) {
             str = "DIV";
             break;
 
-        case NOOP:
-            str = "NOOP";
+        case NOP:
+            str = "NOP";
             break;
     }
     return str;
