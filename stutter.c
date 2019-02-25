@@ -16,7 +16,7 @@
 
 
 /* constructors */
-StutterObject *make_number_obj(number n) {
+StutterObject *make_number_obj(const number n) {
     StutterObject *obj;
     if ((obj = (StutterObject *)malloc(sizeof(StutterObject))) == NULL) {
         fprintf(stderr, "failed to allocate memory");
@@ -28,9 +28,9 @@ StutterObject *make_number_obj(number n) {
 }
 
 
-ASTNode *make_ast_node(ASTkind kind,
+ASTNode *make_ast_node(const ASTkind kind,
                        StutterObject *obj,
-                       Operator op,
+                       const Operator op,
                        ASTNode *left_node,
                        ASTNode *condition,
                        ASTNode *right_node) {
@@ -127,7 +127,7 @@ void destroy_ast_node(ASTNode *node) {
 
 
 /* emitter helpers */
-char *get_op_str(Operator op) {
+char *get_op_str(const Operator op) {
     char *str = NULL;
     switch (op) {
         case ADD:
@@ -154,7 +154,7 @@ char *get_op_str(Operator op) {
 }
 
 
-char *get_op_val(char *str, StutterObject *obj) {
+char *get_op_val(char *str, const StutterObject *obj) {
     switch (obj->type) {
         case NUMBER_TYPE:
             sprintf(str, "%ld", obj->value.number_value);
@@ -169,7 +169,7 @@ char *get_op_val(char *str, StutterObject *obj) {
 
 
 /* code generation */
-int emit(FILE *output, ASTNode *node) {
+int emit(FILE *output, const ASTNode *node) {
     int exit_code = 0;
     switch (node->kind) {
         case CONDITIONAL:

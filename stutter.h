@@ -63,11 +63,11 @@ typedef struct ASTNode {
 
 
 /* constructors */
-StutterObject *make_number_obj(number);
+StutterObject *make_number_obj(const number);
 
-ASTNode *make_ast_node(ASTkind, /* base constructor */
+ASTNode *make_ast_node(const ASTkind, /* base constructor */
                        StutterObject *,
-                       Operator,
+                       const Operator,
                        ASTNode *,
                        ASTNode *,
                        ASTNode *);
@@ -90,7 +90,9 @@ ASTNode *parse(void);
 
 
 /* code generation */
-int emit(FILE *, ASTNode *);
+char *get_op_str(const Operator op);
+char *get_op_val(char *str, const StutterObject *obj);
+int emit(FILE *, const ASTNode *);
 
 
 #endif /* STUTTER_H */
