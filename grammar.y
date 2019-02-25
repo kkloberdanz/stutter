@@ -32,7 +32,7 @@ expr        : '+' expr expr              { $$ = make_operator_node(ADD, $2, $3) 
             | '*' expr expr              { $$ = make_operator_node(MUL, $2, $3) ; }
             | '/' expr expr              { $$ = make_operator_node(DIV, $2, $3) ; }
             | sexpr
-            | NUMBER                     { $$ = make_leaf_node(make_number_obj($1)) ; }
+            | NUMBER                     { $$ = make_leaf_node(make_number_obj((number)$1)) ; }
             ;
 
 %%
@@ -49,7 +49,9 @@ int yylex() {
     while ((c = getchar()) == ' ');
     if ((c == '.') || (isdigit(c))) {
         ungetc(c, stdin);
-        scanf("%d", &yylval);
+        if (!scanf("%ld", (number *)&yylval)) {
+            fprintf(stderr, "%s\n", "failed to read from stdin");
+        }
         return NUMBER;
     }
     if (c == '\n') {
