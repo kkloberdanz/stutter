@@ -2,6 +2,7 @@
 #define STUTTER_H
 
 
+#include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -82,7 +83,6 @@ ASTNode *make_operator_node(Operator,  /* holds operator and child items */
 /* destructors */
 void destroy_obj(StutterObject *);
 void destroy_ast_node(ASTNode *);
-int emit(FILE *, ASTNode *);
 
 
 /* parser */
@@ -90,9 +90,7 @@ ASTNode *parse(void);
 
 
 /* code generation */
-/*
-void emit(FILE *, ASTNode *);
-*/
+int emit(FILE *, ASTNode *);
 
 
 #endif /* STUTTER_H */
