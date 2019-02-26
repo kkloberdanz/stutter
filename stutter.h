@@ -5,6 +5,11 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <stdbool.h>
+
+
+/* globals */
+extern char token_string[101];
 
 
 /* embedded strings */
@@ -23,7 +28,7 @@ typedef enum {
     NUMBER_TYPE,
     REAL_TYPE,
     BOOL_TYPE,
-    STRING_TYPE,
+    STRING_TYPE
 } StutterType;
 
 
@@ -70,6 +75,7 @@ typedef struct ASTNode {
 StutterObject *make_number_obj(const number);
 StutterObject *make_string_obj(const char *str);
 StutterObject *make_id_obj(const char *str);
+char *make_string(const char *str);
 
 ASTNode *make_ast_node(const ASTkind, /* base constructor */
                        StutterObject *,
@@ -89,6 +95,10 @@ ASTNode *make_operator_node(Operator,  /* holds operator and child items */
 /* destructors */
 void destroy_obj(StutterObject *);
 void destroy_ast_node(ASTNode *);
+
+
+/* lexer */
+int get_token(void);
 
 
 /* parser */

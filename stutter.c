@@ -15,6 +15,9 @@
 #include "stutter.h"
 
 
+char token_string[101];
+
+
 /* constructors */
 StutterObject *make_number_obj(const number n) {
     StutterObject *obj;
@@ -41,8 +44,6 @@ StutterObject *make_string_obj(const char *str) {
 
 
 StutterObject *make_id_obj(const char *symb) {
-    puts("making object");
-    printf("making id obj: %s\n", symb);
     StutterObject *obj;
     if ((obj = (StutterObject *)malloc(sizeof(StutterObject))) == NULL) {
         fprintf(stderr, "failed to allocate memory");
@@ -51,6 +52,17 @@ StutterObject *make_id_obj(const char *symb) {
     obj->type = VOID_TYPE;
     obj->value.symbol = symb;
     return obj;
+}
+
+
+char *make_string(const char *str) {
+    char *s = (char *)malloc(strlen(str) + 1);
+    if (s == NULL) {
+        fprintf(stderr, "%s\n", "out of memory");
+        exit(EXIT_FAILURE);
+    }
+    strcpy(s, str);
+    return s;
 }
 
 
@@ -225,6 +237,9 @@ int emit(FILE *output, const ASTNode *node) {
 
 
 int main(int argc, char **argv) {
+    char *output_filename = NULL;
+    FILE *output;
+    int exit_code;
     if (argc != 2) {
         fprintf(stderr, "usage: %s FILENAME\n", argv[0]);
         return 1;
@@ -236,9 +251,9 @@ int main(int argc, char **argv) {
             exit(EXIT_FAILURE);
         }
 
-        char *output_filename = argv[1];
-        FILE *output = fopen(output_filename, "w");
-        int exit_code = emit(output, tree);
+        output_filename = argv[1];
+        output = fopen(output_filename, "w");
+        exit_code = emit(output, tree);
         fclose(output);
         destroy_ast_node(tree);
         return exit_code;

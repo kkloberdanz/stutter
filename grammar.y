@@ -1,4 +1,7 @@
 %{
+#define YYPARSER
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -12,30 +15,51 @@
 #define YYSTYPE ASTNode *
 
 
-int yylex();
+static int yylex();
 void yyerror(const char *s);
 static ASTNode *tree = NULL;
 
 %}
 
-%token NUMBER
+%token ENDFILE
+%token ERROR
+%token IF
+%token THEN
+%token ELSE
+%token PRINT
 %token ID
+%token NUMBER
+%token ASSIGN
+%token EQ
+%token NE
+%token LT
+%token GE
+%token LE
+%token PLUS
+%token MINUS
+%token TIMES
+%token OVER
+%token EXPONENT
+%token LPAREN
+%token RPAREN
+%token SEMI
 
-%left '-' '+'
-%left '*' '/'
-%right '^'        /* exponentiation */
+
+%left MINUS PLUS
+%left TIMES OVER
+%right EXPONENT        /* exponentiation */
 
 %%
-prog        : expr                       { tree = $1 ; }
+prog        : expr                  { tree = $1 ; }
             ;
 
-expr        : expr '+' expr              { $$ = make_operator_node(ADD, $1, $3) ; }
-            | expr '-' expr              { $$ = make_operator_node(SUB, $1, $3) ; }
-            | expr '*' expr              { $$ = make_operator_node(MUL, $1, $3) ; }
-            | expr '/' expr              { $$ = make_operator_node(DIV, $1, $3) ; }
-            | '(' expr ')'               { $$ = $2 ; }
-            | NUMBER                     { $$ = make_leaf_node(make_number_obj((number)$1)) ; }
-            | ID                         { $$ = make_leaf_node(make_id_obj((char *)$1)) ; }
+expr        : expr PLUS expr        { $$ = make_operator_node(ADD, $1, $3) ; }
+            | expr MINUS expr       { $$ = make_operator_node(SUB, $1, $3) ; }
+            | expr TIMES expr       { $$ = make_operator_node(MUL, $1, $3) ; }
+            | expr OVER expr        { $$ = make_operator_node(DIV, $1, $3) ; }
+            | LPAREN expr RPAREN    { $$ = $2 ; }
+            | NUMBER                { $$ = make_leaf_node(make_number_obj(atoi(token_string))) ; }
+            | ID                    { $$ = make_leaf_node(make_id_obj(make_string(token_string))) ; }
             ;
 
 %%
@@ -47,6 +71,13 @@ ASTNode *parse(void) {
 }
 
 
+static int yylex(void) {
+    int token = get_token();
+    printf("token = %d\n", token);
+    return token;
+}
+
+/*
 int yylex() {
     int c;
     while ((c = getchar()) == ' ');
@@ -71,3 +102,4 @@ int yylex() {
         return ID;
     }
 }
+*/
