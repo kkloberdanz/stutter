@@ -28,6 +28,18 @@ StutterObject *make_number_obj(const number n) {
 }
 
 
+StutterObject *make_string_obj(const char *str) {
+    StutterObject *obj;
+    if ((obj = (StutterObject *)malloc(sizeof(StutterObject))) == NULL) {
+        fprintf(stderr, "failed to allocate memory");
+        exit(EXIT_FAILURE);
+    }
+    obj->type = STRING_TYPE;
+    obj->value.string_value = str;
+    return obj;
+}
+
+
 ASTNode *make_ast_node(const ASTkind kind,
                        StutterObject *obj,
                        const Operator op,
@@ -207,7 +219,6 @@ int main(int argc, char **argv) {
         char *output_filename = argv[1];
         FILE *output = fopen(output_filename, "w");
         int exit_code = emit(output, tree);
-        fprintf(output, "%s\n", "999999"); /* halt instruction */
         fclose(output);
         destroy_ast_node(tree);
         return exit_code;

@@ -21,7 +21,8 @@ typedef double real;
 typedef enum {
     NUMBER_TYPE,
     REAL_TYPE,
-    BOOL_TYPE
+    BOOL_TYPE,
+    STRING_TYPE,
 } StutterType;
 
 
@@ -48,6 +49,7 @@ typedef struct StutterObject {
         number number_value;
         real real_value;
         bool bool_value;
+        const char *string_value;
     } value;
 } StutterObject;
 
@@ -64,6 +66,7 @@ typedef struct ASTNode {
 
 /* constructors */
 StutterObject *make_number_obj(const number);
+StutterObject *make_string_obj(const char *str);
 
 ASTNode *make_ast_node(const ASTkind, /* base constructor */
                        StutterObject *,

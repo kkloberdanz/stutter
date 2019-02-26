@@ -19,19 +19,19 @@ static ASTNode *tree = NULL;
 %}
 
 %token NUMBER
+%left '-' '+'
+%left '*' '/'
+%right '^'        /* exponentiation */
 
 %%
-lines       : sexpr                      { tree = $1 ; }
+prog        : expr                       { tree = $1 ; }
             ;
 
-sexpr       : '(' expr ')'               { $$ = $2 ; }
-            ;
-
-expr        : '+' expr expr              { $$ = make_operator_node(ADD, $2, $3) ; }
-            | '-' expr expr              { $$ = make_operator_node(SUB, $2, $3) ; }
-            | '*' expr expr              { $$ = make_operator_node(MUL, $2, $3) ; }
-            | '/' expr expr              { $$ = make_operator_node(DIV, $2, $3) ; }
-            | sexpr
+expr        : expr '+' expr              { $$ = make_operator_node(ADD, $1, $3) ; }
+            | expr '-' expr              { $$ = make_operator_node(SUB, $1, $3) ; }
+            | expr '*' expr              { $$ = make_operator_node(MUL, $1, $3) ; }
+            | expr '/' expr              { $$ = make_operator_node(DIV, $1, $3) ; }
+            | '(' expr ')'               { $$ = $2 ; }
             | NUMBER                     { $$ = make_leaf_node(make_number_obj((number)$1)) ; }
             ;
 
@@ -47,7 +47,7 @@ ASTNode *parse(void) {
 int yylex() {
     int c;
     while ((c = getchar()) == ' ');
-    if ((c == '.') || (isdigit(c))) {
+    if (isdigit(c)) {
         ungetc(c, stdin);
         if (!scanf("%ld", (number *)&yylval)) {
             fprintf(stderr, "%s\n", "failed to read from stdin");
