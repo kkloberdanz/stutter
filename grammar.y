@@ -76,30 +76,3 @@ static int yylex(void) {
     printf("token = %d\n", token);
     return token;
 }
-
-/*
-int yylex() {
-    int c;
-    while ((c = getchar()) == ' ');
-    if (isdigit(c)) {
-        ungetc(c, stdin);
-        if (!scanf("%ld", (number *)&yylval)) {
-            fprintf(stderr, "%s\n", "failed to read from stdin");
-        }
-        return NUMBER;
-    } else if (c == '\n') {
-        return 0;
-    } else if ((c == '+') ||
-               (c == '-') ||
-               (c == '*') ||
-               (c == '/')) {
-        return c;
-    } else {
-        ungetc(c, stdin);
-        if (!scanf("%s", (char *)&yylval)) {
-            fprintf(stderr, "%s\n", "failed to read from stdin");
-        }
-        return ID;
-    }
-}
-*/
