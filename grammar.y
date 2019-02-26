@@ -19,6 +19,8 @@ static ASTNode *tree = NULL;
 %}
 
 %token NUMBER
+%token ID
+
 %left '-' '+'
 %left '*' '/'
 %right '^'        /* exponentiation */
@@ -33,6 +35,7 @@ expr        : expr '+' expr              { $$ = make_operator_node(ADD, $1, $3) 
             | expr '/' expr              { $$ = make_operator_node(DIV, $1, $3) ; }
             | '(' expr ')'               { $$ = $2 ; }
             | NUMBER                     { $$ = make_leaf_node(make_number_obj((number)$1)) ; }
+            | ID                         { $$ = make_leaf_node(make_id_obj((char *)$1)) ; }
             ;
 
 %%
@@ -53,9 +56,18 @@ int yylex() {
             fprintf(stderr, "%s\n", "failed to read from stdin");
         }
         return NUMBER;
-    }
-    if (c == '\n') {
+    } else if (c == '\n') {
         return 0;
+    } else if ((c == '+') ||
+               (c == '-') ||
+               (c == '*') ||
+               (c == '/')) {
+        return c;
+    } else {
+        ungetc(c, stdin);
+        if (!scanf("%s", (char *)&yylval)) {
+            fprintf(stderr, "%s\n", "failed to read from stdin");
+        }
+        return ID;
     }
-    return c;
 }

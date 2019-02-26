@@ -19,6 +19,7 @@ typedef double real;
 
 /* enums */
 typedef enum {
+    VOID_TYPE,  /* voids must be resolved during type deduction */
     NUMBER_TYPE,
     REAL_TYPE,
     BOOL_TYPE,
@@ -50,6 +51,7 @@ typedef struct StutterObject {
         real real_value;
         bool bool_value;
         const char *string_value;
+        const char *symbol;
     } value;
 } StutterObject;
 
@@ -67,6 +69,7 @@ typedef struct ASTNode {
 /* constructors */
 StutterObject *make_number_obj(const number);
 StutterObject *make_string_obj(const char *str);
+StutterObject *make_id_obj(const char *str);
 
 ASTNode *make_ast_node(const ASTkind, /* base constructor */
                        StutterObject *,

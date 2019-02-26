@@ -40,6 +40,20 @@ StutterObject *make_string_obj(const char *str) {
 }
 
 
+StutterObject *make_id_obj(const char *symb) {
+    puts("making object");
+    printf("making id obj: %s\n", symb);
+    StutterObject *obj;
+    if ((obj = (StutterObject *)malloc(sizeof(StutterObject))) == NULL) {
+        fprintf(stderr, "failed to allocate memory");
+        exit(EXIT_FAILURE);
+    }
+    obj->type = VOID_TYPE;
+    obj->value.symbol = symb;
+    return obj;
+}
+
+
 ASTNode *make_ast_node(const ASTkind kind,
                        StutterObject *obj,
                        const Operator op,
@@ -216,6 +230,12 @@ int main(int argc, char **argv) {
         return 1;
     } else {
         ASTNode *tree = parse();
+
+        if (tree == NULL) {
+            fprintf(stderr, "%s\n", "failed to parse input");
+            exit(EXIT_FAILURE);
+        }
+
         char *output_filename = argv[1];
         FILE *output = fopen(output_filename, "w");
         int exit_code = emit(output, tree);
