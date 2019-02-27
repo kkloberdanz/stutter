@@ -27,7 +27,7 @@
 #include "stutter.h"
 
 
-char token_string[101];
+char token_string[MAX_TOKEN_SIZE+1];
 
 
 /* constructors */
