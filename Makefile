@@ -1,12 +1,15 @@
-CFLAGS=-Og -g -ansi
+CFLAGS=-O3 -g -ansi
 WARN_FLAGS=-Wall -Wextra -Wpedantic -Werror -Wno-unused-function
 
 CC=gcc $(CFLAGS) $(WARN_FLAGS)
 
-all: stutter
-	$(CC) -o stutter stutter.o lex.yy.o y.tab.o -lfl -ly
+all: lexer parser stutter main
+	$(CC) -o stutter main.o stutter.o lex.yy.o y.tab.o -lfl -ly
 
-stutter: lexer parser
+main:
+	$(CC) -c main.c
+
+stutter:
 	$(CC) -c stutter.c
 
 lexer: parser
@@ -23,3 +26,6 @@ clean:
 	rm -f lex.yy.c
 	rm -f y.tab.c
 	rm -f y.tab.h
+
+lint:
+	splint *.c
