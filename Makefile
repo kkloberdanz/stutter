@@ -1,4 +1,4 @@
-CFLAGS=-O3 -g -ansi
+CFLAGS=-O3 -g -std=iso9899:1990
 WARN_FLAGS=-Wall -Wextra -Wpedantic -Werror -Wno-unused-function
 
 CC=gcc $(CFLAGS) $(WARN_FLAGS)
