@@ -93,6 +93,5 @@ ASTNode *parse(void) {
 
 static int yylex(void) {
     int token = get_token();
-    printf("token = %d\n", token);
     return token;
 }

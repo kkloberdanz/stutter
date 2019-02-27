@@ -35,7 +35,7 @@ StutterObject *make_number_obj(const number n) {
     StutterObject *obj;
     if ((obj = (StutterObject *)malloc(sizeof(StutterObject))) == NULL) {
         fprintf(stderr, "failed to allocate memory");
-        exit(EXIT_FAILURE);
+        return NULL;
     }
     obj->type = NUMBER_TYPE;
     obj->value.number_value = n;
@@ -47,7 +47,7 @@ StutterObject *make_string_obj(const char *str) {
     StutterObject *obj;
     if ((obj = (StutterObject *)malloc(sizeof(StutterObject))) == NULL) {
         fprintf(stderr, "failed to allocate memory");
-        exit(EXIT_FAILURE);
+        return NULL;
     }
     obj->type = STRING_TYPE;
     obj->value.string_value = str;
@@ -59,7 +59,7 @@ StutterObject *make_id_obj(const char *symb) {
     StutterObject *obj;
     if ((obj = (StutterObject *)malloc(sizeof(StutterObject))) == NULL) {
         fprintf(stderr, "failed to allocate memory");
-        exit(EXIT_FAILURE);
+        return NULL;
     }
     obj->type = VOID_TYPE;
     obj->value.symbol = symb;
@@ -71,7 +71,7 @@ char *make_string(const char *str) {
     char *s = (char *)malloc(strlen(str) + 1);
     if (s == NULL) {
         fprintf(stderr, "%s\n", "out of memory");
-        exit(EXIT_FAILURE);
+        return NULL;
     }
     strcpy(s, str);
     return s;
@@ -88,7 +88,7 @@ ASTNode *make_ast_node(const ASTkind kind,
     ASTNode *node;
     if ((node = (ASTNode *)malloc(sizeof(ASTNode))) == NULL) {
         fprintf(stderr, "failed to allocate memory");
-        exit(EXIT_FAILURE);
+        return NULL;
     }
 
     node->kind = kind;
@@ -120,7 +120,8 @@ ASTNode *make_ast_node(const ASTkind kind,
 
         default:
             fprintf(stderr, "error: invalid ASTkind %d\n", kind);
-            exit(EXIT_FAILURE);
+            destroy_ast_node(node);
+            node = NULL;
     }
 
     return node;
@@ -212,7 +213,7 @@ char *get_op_val(char *str, const StutterObject *obj) {
 
         default:
             fprintf(stderr, "unhandled case: %d\n", obj->type);
-            exit(EXIT_FAILURE);
+            return NULL;
     }
     return str;
 }

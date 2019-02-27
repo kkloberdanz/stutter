@@ -20,12 +20,12 @@ parser:
 	yacc -y -d grammar.y
 	$(CC) -c y.tab.c
 
+lint: clean
+	splint *.c
+
 clean:
 	rm -f *.o
 	rm -f stutter
 	rm -f lex.yy.c
 	rm -f y.tab.c
 	rm -f y.tab.h
-
-lint:
-	splint *.c
