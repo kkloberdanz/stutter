@@ -28,6 +28,10 @@
 #include <stdbool.h>
 
 
+/* fix warning from lex.yy.c */
+int fileno(FILE *stream);
+
+
 /* globals */
 extern char token_string[101];
 
