@@ -26,7 +26,7 @@
 
 #include "y.tab.h"
 
-char token_string[101];
+char token_string[MAX_TOKEN_SIZE+1];
 %}
 
 digit       [0-9]
@@ -71,6 +71,6 @@ int get_token(void) {
         yyout = stdout;
     }
     currentToken = yylex();
-    strncpy(token_string, yytext, 100);
+    strncpy(token_string, yytext, MAX_TOKEN_SIZE);
     return currentToken;
 }

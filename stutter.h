@@ -33,7 +33,8 @@ int fileno(FILE *stream);
 
 
 /* globals */
-extern char token_string[101];
+enum { MAX_TOKEN_SIZE=100 };
+extern char token_string[MAX_TOKEN_SIZE+1];
 
 
 /* embedded strings */
