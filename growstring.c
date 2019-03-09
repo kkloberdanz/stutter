@@ -14,7 +14,7 @@ growstring *gs_new(void) {
         exit(EXIT_FAILURE);
     }
 
-    data = (char *)malloc(sizeof(char) * capacity + 1);
+    data = (char *)calloc(capacity + 1, sizeof(char));
     if (data == NULL) {
         fprintf(stderr, "%s\n", "out of memory when allocating string");
         exit(EXIT_FAILURE);
@@ -63,7 +63,7 @@ growstring *gs_write(growstring *dest, const char *data) {
     char *new_data = NULL;
     size_t new_data_size = strlen(data) + 1;
     free(dest->data);
-    new_data = (char *)malloc(sizeof(char) * new_data_size);
+    new_data = (char *)calloc(new_data_size, sizeof(char));
     if (new_data == NULL) {
         fprintf(stderr, "%s\n", "out of memory when allocating string");
         exit(EXIT_FAILURE);
