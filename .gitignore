@@ -8,3 +8,4 @@ y.tab.c
 y.tab.h
 core
 lex.yy.c
+prog.c

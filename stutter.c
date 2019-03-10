@@ -25,6 +25,7 @@
 
 
 #include "stutter.h"
+#include "growstring.h"
 
 
 char token_string[MAX_TOKEN_SIZE+1];
@@ -182,23 +183,23 @@ char *get_op_str(const Operator op) {
     char *str = NULL;
     switch (op) {
         case ADD:
-            str = "ADD";
+            str = "+";
             break;
 
         case SUB:
-            str = "SUB";
+            str = "-";
             break;
 
         case MUL:
-            str = "MUL";
+            str = "*";
             break;
 
         case DIV:
-            str = "DIV";
+            str = "/";
             break;
 
         case NOP:
-            str = "NOP";
+            str = ";";
             break;
     }
     return str;
@@ -219,31 +220,79 @@ char *get_op_val(char *str, const StutterObject *obj) {
 }
 
 
-/* code generation */
-int emit(FILE *output, const ASTNode *node) {
-    int exit_code = 0;
+static char *next_variable(void) {
+    static char var[1] = {'a' - 1};
+    var[0]++;
+    return var;
+}
+
+
+static growstring *emit_helper(const ASTNode *node) {
+    growstring *program = gs_new();
     switch (node->kind) {
         case CONDITIONAL:
+        {
             fprintf(stderr, "CONDITIONAL not implemented");
-            exit_code = 1;
+            exit(EXIT_FAILURE);
             break;
+        }
 
         case OPERATOR:
-            exit_code = exit_code || emit(output, node->right);
-            exit_code = exit_code || emit(output, node->left);
-            fprintf(output, "%s\n", get_op_str(node->op));
+        {
+            growstring *op_gs = gs_new();
+            growstring *left_gs;
+            growstring *right_gs;
+
+            /* get left expr */
+            left_gs = emit_helper(node->left);
+
+            /* store left expr into program */
+            gs_concat(program, left_gs);
+
+            /* get op and store it into program */
+            gs_write(op_gs, get_op_str(node->op));
+            gs_concat(program, op_gs);
+
+            /* get right expr */
+            right_gs = emit_helper(node->right);
+
+            /* store right expr into program */
+            gs_concat(program, right_gs);
+
+            gs_free(op_gs);
+            gs_free(left_gs);
+            gs_free(right_gs);
             break;
+        }
 
         case LEAF:
         {
             char val[100];
-            fprintf(output, "PUSH\n%s\n", get_op_val(val, node->obj));
+            char str[100];
+            sprintf(str, " %s ", get_op_val(val, node->obj));
+            gs_write(program, str);
             break;
         }
 
         default:
             fprintf(stderr, "unknown ASTNode kind in emit: %d\n", node->kind);
-            exit_code = 1;
+            exit(EXIT_FAILURE);
     }
-    return exit_code;
+
+    return program;
+}
+
+
+/* code generation */
+int emit(FILE *output, const ASTNode *node) {
+    char *begin_boilerplate;
+    char *end_boilerplate;
+    growstring *program = gs_new();
+    program = emit_helper(node);
+    begin_boilerplate = "#include <stdio.h>\nint main(void) {\n";
+    end_boilerplate = "    return 0;\n}\n";
+    fprintf(output, "%s    printf(\"ans = %%d\\n\", %s);\n%s", begin_boilerplate,
+                                    gs_get_str(program),
+                                    end_boilerplate);
+    return 0;
 }

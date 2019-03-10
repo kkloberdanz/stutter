@@ -4,13 +4,16 @@ WARN_FLAGS=-Wall -Wextra -Wpedantic -Werror -Wno-unused-function
 CC=gcc $(CFLAGS) $(WARN_FLAGS)
 
 all: lexer parser stutter main
-	$(CC) -o stutter main.o stutter.o lex.yy.o y.tab.o -lfl -ly
+	$(CC) -o stutter main.o stutter.o growstring.o lex.yy.o y.tab.o -lfl -ly
 
 main:
 	$(CC) -c main.c
 
-stutter:
+stutter: growstring
 	$(CC) -c stutter.c
+
+growstring:
+	$(CC) -c growstring.c
 
 lexer: parser
 	lex tokens.l
