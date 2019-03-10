@@ -26,7 +26,7 @@ parser:
 lint: clean
 	splint *.c
 
-test: ll_test gs_test
+test: clean ll_test gs_test
 	rm -f testreport.log
 	echo "Test results" >> testreport.log
 	date >> testreport.log
