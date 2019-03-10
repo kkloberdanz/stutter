@@ -26,7 +26,7 @@ parser:
 lint: clean
 	splint *.c
 
-test: ll_test gs_test
+test: build_ll_test build_gs_test
 	rm -f testreport.log
 	echo "Test results" >> testreport.log
 	date >> testreport.log
@@ -39,10 +39,12 @@ test: ll_test gs_test
 
 	less testreport.log
 
-ll_test:
+build_ll_test:
+	rm -f ll_test
 	$(CC) -o ll_test linkedlist.c tests/ll_test.c
 
-gs_test:
+build_gs_test:
+	rm -f gs_test
 	$(CC) -o gs_test growstring.c tests/gs_test.c
 
 clean:

@@ -59,6 +59,16 @@ linkedlist *ll_delete_next_node(linkedlist *list) {
 }
 
 
+linkedlist *ll_concat(linkedlist *dest, linkedlist *src) {
+    linkedlist *tmp = dest;
+    while (tmp->next != NULL) {
+        tmp = tmp->next;
+    }
+    tmp->next = src;
+    return dest;
+}
+
+
 void ll_free(linkedlist *list) {
     while (list) {
         linkedlist *tmp = list;

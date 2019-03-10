@@ -27,6 +27,7 @@
 #include "stutter.h"
 #include "growstring.h"
 #include "linkedlist.h"
+#include "ir.h"
 
 
 char token_string[MAX_TOKEN_SIZE+1];
@@ -229,17 +230,18 @@ static char *next_variable(void) {
 
 
 /* code generation */
-static linkedlist *codegen_stack_machine(FILE *output, const ASTNode *node) {
-    linkedlist *ll = ll_new(NULL);
+static linkedlist *codegen_stack_machine(const ASTNode *node) {
+    linkedlist *new_node = NULL;
     switch (node->kind) {
         case CONDITIONAL:
             fprintf(stderr, "CONDITIONAL not implemented");
+            exit(EXIT_FAILURE);
             break;
 
         case OPERATOR:
-            emit(output, node->right);
-            emit(output, node->left);
-            fprintf(output, "%s\n", get_op_str(node->op));
+            ll_append(codegen_stack_machine(node->right));
+            ll_append(codegen_stack_machine(node->left));
+            ll_append("%s\n", get_op_str(node->op));
             break;
 
         case LEAF:
@@ -252,7 +254,7 @@ static linkedlist *codegen_stack_machine(FILE *output, const ASTNode *node) {
         default:
             fprintf(stderr, "unknown ASTNode kind in emit: %d\n", node->kind);
     }
-    return ll;
+    return new_node;
 }
 
 
