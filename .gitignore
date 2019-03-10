@@ -9,3 +9,5 @@ y.tab.h
 core
 lex.yy.c
 prog.c
+*_test
+*.log

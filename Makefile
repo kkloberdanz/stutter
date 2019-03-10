@@ -26,9 +26,25 @@ parser:
 lint: clean
 	splint *.c
 
+test: ll_test gs_test
+	date >> testreport.log
+
+	echo "Testing: gs_test" >> testreport.log && \
+		valgrind ./gs_test 2>> testreport.log
+
+	echo "Testing: ll_test" >> testreport.log && \
+		valgrind ./ll_test 2>> testreport.log
+
+ll_test:
+	$(CC) -o ll_test linkedlist.c tests/ll_test.c
+
+gs_test:
+	$(CC) -o gs_test growstring.c tests/gs_test.c
+
 clean:
 	rm -f *.o
 	rm -f stutter
 	rm -f lex.yy.c
 	rm -f y.tab.c
 	rm -f y.tab.h
+	rm -f testreport.log
