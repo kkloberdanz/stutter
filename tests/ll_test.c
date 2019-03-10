@@ -24,11 +24,14 @@ int main(void) {
     ll_append(ll, j);
     ll_append(ll, k);
     ll_append(ll, l);
+    ll_append(ll, NULL);
 
     head = ll;
     while (ll) {
-        value = *(int *)(ll->value);
-        printf("%d\n", value);
+        if (ll->value != NULL) {
+            value = *(int *)(ll->value);
+            printf("%d\n", value);
+        }
         ll = ll->next;
     }
 

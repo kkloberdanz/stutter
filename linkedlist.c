@@ -49,7 +49,10 @@ linkedlist *ll_insert(linkedlist *list, void *value) {
 linkedlist *ll_delete_next_node(linkedlist *list) {
     linkedlist *tmp = list->next;
     list->next = list->next->next;
-    free(tmp->value);
+
+    if (tmp->value) {
+        free(tmp->value);
+    }
     tmp->value = NULL;
     free(tmp);
     return list;
@@ -61,7 +64,10 @@ void ll_free(linkedlist *list) {
         linkedlist *tmp = list;
         list = list->next;
         tmp->next = NULL;
-        free(tmp->value);
+
+        if (tmp->value) {
+            free(tmp->value);
+        }
         tmp->value = NULL;
         free(tmp);
     }
