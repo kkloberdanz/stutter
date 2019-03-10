@@ -294,5 +294,6 @@ int emit(FILE *output, const ASTNode *node) {
     fprintf(output, "%s    printf(\"ans = %%d\\n\", %s);\n%s", begin_boilerplate,
                                     gs_get_str(program),
                                     end_boilerplate);
+    gs_free(program);
     return 0;
 }

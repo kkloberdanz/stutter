@@ -50,6 +50,8 @@ growstring *gs_append(growstring *dest, const char letter) {
 void gs_free(growstring *gs) {
     free(gs->data);
     gs->data = NULL;
+    gs->capacity = 0;
+    gs->size = 0;
     free(gs);
 }
 
