@@ -1,10 +1,17 @@
-CFLAGS=-O3 -g -std=iso9899:1990
+CFLAGS=-Og -g -std=iso9899:1990
 WARN_FLAGS=-Wall -Wextra -Wpedantic -Werror -Wno-unused-function
 
 CC=gcc $(CFLAGS) $(WARN_FLAGS)
 
-all: lexer parser stutter main
-	$(CC) -o stutter main.o stutter.o growstring.o lex.yy.o y.tab.o -lfl -ly
+all: lexer parser stutter main linkedlist ir
+	$(CC) -o stutter \
+             main.o \
+			 stutter.o \
+			 growstring.o \
+			 linkedlist.o \
+			 ir.o \
+			 lex.yy.o \
+			 y.tab.o -lfl -ly
 
 main:
 	$(CC) -c main.c
@@ -14,6 +21,12 @@ stutter: growstring
 
 growstring:
 	$(CC) -c growstring.c
+
+linkedlist:
+	$(CC) -c linkedlist.c
+
+ir:
+	$(CC) -c ir.c
 
 lexer: parser
 	lex tokens.l

@@ -34,19 +34,23 @@ char token_string[MAX_TOKEN_SIZE+1];
 
 
 /* constructors */
-StutterObject *make_number_obj(const number n) {
+StutterObject *make_number_obj(char *n) {
     StutterObject *obj;
+    int len_n;
     if ((obj = (StutterObject *)malloc(sizeof(StutterObject))) == NULL) {
         fprintf(stderr, "failed to allocate memory");
         return NULL;
     }
     obj->type = NUMBER_TYPE;
-    obj->value.number_value = n;
+
+    len_n = strlen(n);
+    obj->value.number_value = (char *)calloc(len_n + 1, sizeof(char));
+    strcpy(obj->value.number_value, n);
     return obj;
 }
 
 
-StutterObject *make_string_obj(const char *str) {
+StutterObject *make_string_obj(char *str) {
     StutterObject *obj;
     if ((obj = (StutterObject *)malloc(sizeof(StutterObject))) == NULL) {
         fprintf(stderr, "failed to allocate memory");
@@ -58,7 +62,7 @@ StutterObject *make_string_obj(const char *str) {
 }
 
 
-StutterObject *make_id_obj(const char *symb) {
+StutterObject *make_id_obj(char *symb) {
     StutterObject *obj;
     if ((obj = (StutterObject *)malloc(sizeof(StutterObject))) == NULL) {
         fprintf(stderr, "failed to allocate memory");
@@ -70,7 +74,7 @@ StutterObject *make_id_obj(const char *symb) {
 }
 
 
-char *make_string(const char *str) {
+char *make_string(char *str) {
     char *s = (char *)malloc(strlen(str) + 1);
     if (s == NULL) {
         fprintf(stderr, "%s\n", "out of memory");
@@ -180,38 +184,47 @@ void destroy_ast_node(ASTNode *node) {
 }
 
 
-/* emitter helpers */
-char *get_op_str(const Operator op) {
-    char *str = NULL;
+Ir *get_op_ir(const Operator op) {
+    Ir *ir = (Ir *)malloc(sizeof(Ir));
+    if (ir == NULL) {
+        fprintf(stderr, "%s\n", "failed to allocate Ir object");
+        exit(EXIT_FAILURE);
+    }
+    ir->kind = IR_OP;
     switch (op) {
         case ADD:
-            str = "ADD";
+            ir->repr = "ADD";
+            ir->value.op = IR_ADD;
             break;
 
         case SUB:
-            str = "SUB";
+            ir->repr = "SUB";
+            ir->value.op = IR_SUB;
             break;
 
         case MUL:
-            str = "MUL";
+            ir->repr = "MUL";
+            ir->value.op = IR_MUL;
             break;
 
         case DIV:
-            str = "DIV";
+            ir->repr = "DIV";
+            ir->value.op = IR_DIV;
             break;
 
         case NOP:
-            str = "NOP";
+            ir->repr = "NOP";
+            ir->value.op = IR_NOP;
             break;
     }
-    return str;
+    return ir;
 }
 
 
 char *get_op_val(char *str, const StutterObject *obj) {
     switch (obj->type) {
         case NUMBER_TYPE:
-            sprintf(str, "%ld", obj->value.number_value);
+            sprintf(str, "%s", obj->value.number_value);
             break;
 
         default:
@@ -222,110 +235,69 @@ char *get_op_val(char *str, const StutterObject *obj) {
 }
 
 
-static char *next_variable(void) {
-    static char var[1] = {'a' - 1};
-    var[0]++;
-    return var;
+static Ir *get_ir_node(const ASTNode *ast) {
+    Ir *ir_node = NULL;
+    switch (ast->kind) {
+        case LEAF:
+        {
+            char *value = ast->obj->value.number_value;
+            ir_node = (Ir *)malloc(sizeof(Ir));
+            ir_node->kind = IR_NUMBER;
+            ir_node->value.number = value;
+            ir_node->repr = value;
+            break;
+        }
+
+        default:
+            fprintf(stderr, "incorrect ast kind: %d\n", ast->kind);
+            exit(EXIT_FAILURE);
+    }
+    if (ir_node == NULL) {
+        fprintf(stderr, "%s\n", "failed to initialize ir_node");
+        exit(EXIT_FAILURE);
+    }
+    return ir_node;
 }
 
 
 /* code generation */
-static linkedlist *codegen_stack_machine(const ASTNode *node) {
-    linkedlist *new_node = NULL;
-    switch (node->kind) {
+static linkedlist *codegen_stack_machine(const ASTNode *ast) {
+    linkedlist *program = NULL;
+    switch (ast->kind) {
         case CONDITIONAL:
             fprintf(stderr, "CONDITIONAL not implemented");
             exit(EXIT_FAILURE);
             break;
 
         case OPERATOR:
-            new_node = ll_new(codegen_stack_machine(node->right));
-            ll_append(new_node, codegen_stack_machine(node->left));
-            ll_append(new_node, get_op_str(node->op));  // TODO store Ir type here
+            program = codegen_stack_machine(ast->right);
+            ll_concat(program, codegen_stack_machine(ast->left));
+            ll_append(program, get_op_ir(ast->op));
             break;
 
         case LEAF:
         {
-            char val[100];
-            //fprintf(output, "PUSH\n%s\n", get_op_val(val, node->obj));
-            new_node = ll_new(ir_new(node->obj));
+            Ir *ir = (Ir *)malloc(sizeof(Ir));
+            ir->repr = "PUSH";
+            ir->kind = IR_OP;
+            ir->value.op = IR_PUSH;
+            program = ll_new(ir);
+            ll_append(program, get_ir_node(ast));
             break;
         }
 
         default:
-            fprintf(stderr, "unknown ASTNode kind in emit: %d\n", node->kind);
-    }
-    return new_node;
-}
-
-
-static growstring *emit_helper(const ASTNode *node) {
-    growstring *program = gs_new();
-    switch (node->kind) {
-        case CONDITIONAL:
-        {
-            fprintf(stderr, "CONDITIONAL not implemented");
-            exit(EXIT_FAILURE);
-            break;
-        }
-
-        case OPERATOR:
-        {
-            growstring *op_gs = gs_new();
-            growstring *left_gs;
-            growstring *right_gs;
-
-            /* get left expr */
-            left_gs = emit_helper(node->left);
-
-            /* store left expr into program */
-            gs_concat(program, left_gs);
-
-            /* get op and store it into program */
-            gs_write(op_gs, get_op_str(node->op));
-            gs_concat(program, op_gs);
-
-            /* get right expr */
-            right_gs = emit_helper(node->right);
-
-            /* store right expr into program */
-            gs_concat(program, right_gs);
-
-            gs_free(op_gs);
-            gs_free(left_gs);
-            gs_free(right_gs);
-            break;
-        }
-
-        case LEAF:
-        {
-            char val[100];
-            char str[100];
-            sprintf(str, " %s ", get_op_val(val, node->obj));
-            gs_write(program, str);
-            break;
-        }
-
-        default:
-            fprintf(stderr, "unknown ASTNode kind in emit: %d\n", node->kind);
+            fprintf(stderr, "unknown ASTNode kind in emit: %d\n", ast->kind);
             exit(EXIT_FAILURE);
     }
-
     return program;
 }
 
 
-/* code generation */
-int emit(FILE *output, const ASTNode *node) {
-    char *begin_boilerplate;
-    char *end_boilerplate;
-    growstring *program = gs_new();
-    program = emit_helper(node);
-    begin_boilerplate = "#include <stdio.h>\nint main(void) {\n";
-    end_boilerplate = "    return 0;\n}\n";
-    fprintf(output, "%s    printf(\"ans = %%d\\n\", %s);\n%s", begin_boilerplate,
-                                    gs_get_str(program),
-                                    end_boilerplate);
-    gs_free(program);
+int emit(FILE *output, const ASTNode *ast) {
+    linkedlist *program = codegen_stack_machine(ast);
+    program = ir_halt_program(program);
+    ir_print_program(output, program);
+    ll_free(program);
     return 0;
 }

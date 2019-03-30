@@ -42,11 +42,6 @@ static volatile char author[] = "Author: Kyle Kloberdanz";
 static volatile char license[] = "License: GNU GPLv3";
 
 
-/* typdefs */
-typedef int64_t number;
-typedef double real;
-
-
 /* enums */
 typedef enum {
     VOID_TYPE,  /* voids must be resolved during type deduction */
@@ -77,11 +72,11 @@ typedef enum {
 typedef struct StutterObject {
     StutterType type;
     union {
-        number number_value;
-        real real_value;
+        char * number_value;
+        char * real_value;
         bool bool_value;
-        const char *string_value;
-        const char *symbol;
+        char *string_value;
+        char *symbol;
     } value;
 } StutterObject;
 
@@ -97,10 +92,10 @@ typedef struct ASTNode {
 
 
 /* constructors */
-StutterObject *make_number_obj(const number);
-StutterObject *make_string_obj(const char *str);
-StutterObject *make_id_obj(const char *str);
-char *make_string(const char *str);
+StutterObject *make_number_obj(char *number);
+StutterObject *make_string_obj(char *str);
+StutterObject *make_id_obj(char *str);
+char *make_string(char *str);
 
 ASTNode *make_ast_node(const ASTkind, /* base constructor */
                        StutterObject *,

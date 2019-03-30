@@ -78,7 +78,7 @@ expr        : expr PLUS expr        { $$ = make_operator_node(ADD, $1, $3) ; }
             | expr TIMES expr       { $$ = make_operator_node(MUL, $1, $3) ; }
             | expr OVER expr        { $$ = make_operator_node(DIV, $1, $3) ; }
             | LPAREN expr RPAREN    { $$ = $2 ; }
-            | NUMBER                { $$ = make_leaf_node(make_number_obj(atoi(token_string))) ; }
+            | NUMBER                { $$ = make_leaf_node(make_number_obj(token_string)) ; }
             | ID                    { $$ = make_leaf_node(make_id_obj(make_string(token_string))) ; }
             ;
 
