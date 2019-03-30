@@ -185,23 +185,23 @@ char *get_op_str(const Operator op) {
     char *str = NULL;
     switch (op) {
         case ADD:
-            str = "+";
+            str = "ADD";
             break;
 
         case SUB:
-            str = "-";
+            str = "SUB";
             break;
 
         case MUL:
-            str = "*";
+            str = "MUL";
             break;
 
         case DIV:
-            str = "/";
+            str = "DIV";
             break;
 
         case NOP:
-            str = ";";
+            str = "NOP";
             break;
     }
     return str;
@@ -239,15 +239,16 @@ static linkedlist *codegen_stack_machine(const ASTNode *node) {
             break;
 
         case OPERATOR:
-            ll_append(codegen_stack_machine(node->right));
-            ll_append(codegen_stack_machine(node->left));
-            ll_append("%s\n", get_op_str(node->op));
+            new_node = ll_new(codegen_stack_machine(node->right));
+            ll_append(new_node, codegen_stack_machine(node->left));
+            ll_append(new_node, get_op_str(node->op));  // TODO store Ir type here
             break;
 
         case LEAF:
         {
             char val[100];
-            fprintf(output, "PUSH\n%s\n", get_op_val(val, node->obj));
+            //fprintf(output, "PUSH\n%s\n", get_op_val(val, node->obj));
+            new_node = ll_new(ir_new(node->obj));
             break;
         }
 

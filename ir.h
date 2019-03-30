@@ -14,4 +14,7 @@ typedef struct Ir {
 } Ir;
 
 
+Ir *ir_new(void);
+
+
 #endif /* IR_H */
