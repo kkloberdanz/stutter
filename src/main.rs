@@ -40,6 +40,12 @@ enum AST {
     Branch(Op, Vec<AST>),
 }
 
+#[derive(Clone, Debug)]
+enum Production {
+    Tree(AST),
+    Tok(Token),
+}
+
 fn prompt_user(prompt: &String) -> Input {
     print!("{}", prompt);
     io::stdout().flush().ok().expect("Could not flush stdout");
@@ -130,38 +136,64 @@ fn lex(cmd: &String) -> Result<Vec<Token>, &str> {
     }
 }
 
-fn parse(tokens: &Vec<Token>) -> AST {
+fn parse(tokens: &Vec<Token>) -> Result<AST, String> {
     let mut stack = Vec::new();
-    let mut tree = AST::Leaf(Atom::Nil);
     for tok in tokens.iter() {
         match tok {
             Token::Rparen => {
                 let mut list = Vec::new();
-                while let Some(t) = stack.pop() {
-                    match t {
-                        Token::Lparen => break,
-                        _ => {
-                            println!("adding to tree: {:?}", t);
-                            match token_to_atom(&t) {
-                                Some(atom) => list.push(AST::Leaf(atom)),
-                                None => {
-                                    list.push(tree);
-                                    let op = token_to_op(&t);
-                                    let branch = AST::Branch(op, list);
-                                    println!("branch = {:?}", branch);
-                                    tree = branch;
-                                    list = Vec::new();
+                while let Some(v) = stack.pop() {
+                    println!("1 stack == {:#?}", stack);
+                    match v {
+                        Production::Tok(t) => {
+                            match t {
+                                Token::Lparen => {
+                                    break;
+                                },
+                                _ => {
+                                    println!("adding to tree: {:?}", t);
+                                    match token_to_atom(&t) {
+                                        Some(atom) => list.push(AST::Leaf(atom)),
+                                        None => {
+                                            let op = token_to_op(&t);
+                                            let branch = AST::Branch(op, list);
+                                            println!("branch = {:?}", branch);
+                                            let top = stack.pop().unwrap();
+                                            println!("top = {:?}", top);
+                                            stack.push(Production::Tree(branch));
+                                            println!("2 stack == {:#?}", stack);
+                                            list = Vec::new();
+                                        }
+                                    }
                                 }
+                            }
+                        },
+                        Production::Tree(tree) => {
+                            if stack.len() == 0 {
+                                return Ok(tree);
+                            } else {
+                                list.push(tree);
                             }
                         }
                     }
                 }
                 println!();
             },
-            _ => stack.push(tok.clone())
+            _ => stack.push(Production::Tok(tok.clone()))
         }
     }
-    tree
+    println!("stack.len() == {}", stack.len());
+    println!("3 stack == {:#?}", stack);
+    if stack.len() == 1 {
+        let top = stack[0].clone();
+        match top {
+            Production::Tree(t) => Ok(t),
+            Production::Tok(tok) => Err(format!("syntax error, ended with unmatched token: {:?}", tok)),
+        }
+    } else {
+        Err(String::from("syntax error, failed to parse"))
+    }
+
 }
 
 fn main() {
