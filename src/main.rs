@@ -24,7 +24,7 @@ enum Op {
     Add,
     Sub,
     Mul,
-    Div
+    Div,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -50,7 +50,9 @@ fn prompt_user(prompt: &String) -> Input {
     print!("{}", prompt);
     io::stdout().flush().ok().expect("Could not flush stdout");
     let mut user_input = String::new();
-    io::stdin().read_line(&mut user_input).expect("failed to read stdin");
+    io::stdin()
+        .read_line(&mut user_input)
+        .expect("failed to read stdin");
     let as_string = user_input.trim().to_string();
 
     match as_string.as_ref() {
@@ -79,7 +81,7 @@ fn token_to_atom(tok: &Token) -> Option<Atom> {
     match tok {
         Token::Id(s) => Some(Atom::Id(s.to_string())),
         Token::Num(i) => Some(Atom::Num(*i)),
-        _ => None
+        _ => None,
     }
 }
 
@@ -98,14 +100,13 @@ fn lex(cmd: &String) -> Result<Vec<Token>, &str> {
     let mut tok = String::new();
     for c in cmd.chars() {
         match c {
-
             ')' => {
                 if tok.len() > 0 {
                     tokens.push(to_token(&tok));
                     tok = String::new();
                 }
                 tokens.push(to_token(&String::from(")")));
-            },
+            }
 
             '(' => {
                 if tok.len() > 0 {
@@ -113,20 +114,19 @@ fn lex(cmd: &String) -> Result<Vec<Token>, &str> {
                     tok = String::new();
                 }
                 tokens.push(to_token(&String::from("(")));
-            },
+            }
 
             ' ' => {
                 if tok.len() > 0 {
                     tokens.push(to_token(&tok));
                     tok = String::new();
                 }
-            },
+            }
 
             _ => {
                 tok.push(c);
             }
         }
-
     }
 
     if tok.len() > 0 {
@@ -146,34 +146,36 @@ fn parse(tokens: &Vec<Token>) -> Result<AST, String> {
                 while let Some(v) = stack.pop() {
                     println!("1 stack == {:?}", stack);
                     match v {
-                        Production::Tok(t) => {
-                            match t {
-                                Token::Lparen => {
-                                    break;
-                                },
-                                _ => {
-                                    println!("adding to tree: {:?}", t);
-                                    match token_to_atom(&t) {
-                                        Some(atom) => list.push(AST::Leaf(atom)),
-                                        None => {
-                                            let op = token_to_op(&t);
-                                            let branch = AST::Branch(op, list);
-                                            println!("branch = {:?}", branch);
-                                            let top = stack.pop().unwrap();
-                                            if top != Production::Tok(Token::Lparen) {
-                                                return Err(String::from("expected '('"));
-                                            }
-                                            println!("top = {:?}", top);
-                                            stack.push(Production::Tree(branch));
-                                            println!("2 stack == {:?}", stack);
-                                            break;
+                        Production::Tok(t) => match t {
+                            Token::Lparen => {
+                                break;
+                            }
+                            _ => {
+                                println!("adding to tree: {:?}", t);
+                                match token_to_atom(&t) {
+                                    Some(atom) => list.push(AST::Leaf(atom)),
+                                    None => {
+                                        let op = token_to_op(&t);
+                                        let branch = AST::Branch(op, list);
+                                        println!("branch = {:?}", branch);
+                                        let top = stack.pop().unwrap();
+                                        if top
+                                            != Production::Tok(Token::Lparen)
+                                        {
+                                            return Err(String::from(
+                                                "expected '('",
+                                            ));
                                         }
+                                        println!("top = {:?}", top);
+                                        stack.push(Production::Tree(branch));
+                                        println!("2 stack == {:?}", stack);
+                                        break;
                                     }
                                 }
                             }
                         },
                         Production::Tree(tree) => {
-                            if stack.len() == 0  && tokens.len() == 0 {
+                            if stack.len() == 0 && tokens.len() == 0 {
                                 println!("returning tree early");
                                 return Ok(tree);
                             } else {
@@ -184,8 +186,8 @@ fn parse(tokens: &Vec<Token>) -> Result<AST, String> {
                     }
                 }
                 println!();
-            },
-            _ => stack.push(Production::Tok(tok.clone()))
+            }
+            _ => stack.push(Production::Tok(tok.clone())),
         }
     }
     println!("stack.len() == {}", stack.len());
@@ -194,12 +196,14 @@ fn parse(tokens: &Vec<Token>) -> Result<AST, String> {
         let top = stack[0].clone();
         match top {
             Production::Tree(t) => Ok(t),
-            Production::Tok(tok) => Err(format!("syntax error, ended with unmatched token: {:?}", tok)),
+            Production::Tok(tok) => Err(format!(
+                "syntax error, ended with unmatched token: {:?}",
+                tok
+            )),
         }
     } else {
         Err(String::from("syntax error, failed to parse"))
     }
-
 }
 
 fn main() {
@@ -209,7 +213,6 @@ fn main() {
         let cmd = prompt_user(&prompt);
         match cmd {
             Input::Command(s) => {
-
                 // Eval
                 let tokens = lex(&s);
                 match tokens {
@@ -217,14 +220,13 @@ fn main() {
                         println!("{:?}", t);
                         let tree = parse(&t);
                         println!("{:?}", tree);
-                    },
+                    }
                     Err(e) => println!("{}", e),
                 }
                 //let result = eval(tree);
             }
             Input::Quit => break,
         };
-
 
         // Print
 
