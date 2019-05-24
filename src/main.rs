@@ -6,7 +6,7 @@ enum Input {
     Command(String),
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 enum Token {
     Null,
     Lparen,
@@ -19,7 +19,7 @@ enum Token {
     Id(String),
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 enum Op {
     Add,
     Sub,
@@ -27,20 +27,20 @@ enum Op {
     Div
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 enum Atom {
     Nil,
     Num(i64),
     Id(String),
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 enum AST {
     Leaf(Atom),
     Branch(Op, Vec<AST>),
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 enum Production {
     Tree(AST),
     Tok(Token),
@@ -139,11 +139,12 @@ fn lex(cmd: &String) -> Result<Vec<Token>, &str> {
 fn parse(tokens: &Vec<Token>) -> Result<AST, String> {
     let mut stack = Vec::new();
     for tok in tokens.iter() {
+        println!("token = {:?}", tok);
         match tok {
             Token::Rparen => {
                 let mut list = Vec::new();
                 while let Some(v) = stack.pop() {
-                    println!("1 stack == {:#?}", stack);
+                    println!("1 stack == {:?}", stack);
                     match v {
                         Production::Tok(t) => {
                             match t {
@@ -159,19 +160,24 @@ fn parse(tokens: &Vec<Token>) -> Result<AST, String> {
                                             let branch = AST::Branch(op, list);
                                             println!("branch = {:?}", branch);
                                             let top = stack.pop().unwrap();
+                                            if top != Production::Tok(Token::Lparen) {
+                                                return Err(String::from("expected '('"));
+                                            }
                                             println!("top = {:?}", top);
                                             stack.push(Production::Tree(branch));
-                                            println!("2 stack == {:#?}", stack);
-                                            list = Vec::new();
+                                            println!("2 stack == {:?}", stack);
+                                            break;
                                         }
                                     }
                                 }
                             }
                         },
                         Production::Tree(tree) => {
-                            if stack.len() == 0 {
+                            if stack.len() == 0  && tokens.len() == 0 {
+                                println!("returning tree early");
                                 return Ok(tree);
                             } else {
+                                println!("pushing to list: {:?}", tree);
                                 list.push(tree);
                             }
                         }
@@ -225,3 +231,5 @@ fn main() {
         // Loop
     }
 }
+
+// test = (+ 1 2 3 (- 4 5) (* (/ 6 7) 8))
