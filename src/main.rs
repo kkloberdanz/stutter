@@ -23,7 +23,6 @@ enum Input {
 
 #[derive(Clone, Debug, PartialEq)]
 enum Token {
-    Null,
     Lparen,
     Rparen,
     Plus,
@@ -46,7 +45,6 @@ enum Op {
 enum Atom {
     Num(i64),
     Id(String),
-    Nil,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -115,7 +113,7 @@ fn token_to_op(tok: &Token) -> Result<Op, String> {
     }
 }
 
-fn lex(cmd: &String) -> Result<Vec<Token>, &str> {
+fn lex(cmd: &String) -> Result<Vec<Token>, String> {
     let mut tokens = Vec::new();
     let mut tok = String::new();
     let mut in_comment = false;
@@ -158,7 +156,7 @@ fn lex(cmd: &String) -> Result<Vec<Token>, &str> {
     }
 
     if tok.len() > 0 {
-        Err("Invalid syntax, trailing characters after final ')'")
+        Err(format!("Invalid syntax, token not matched: {:?}", tok))
     } else {
         Ok(tokens)
     }
@@ -249,9 +247,6 @@ fn reduce(
                 let acc_update = apply_op(op, &acc_val, operand);
                 acc = StutterObject::Atom(Atom::Num(acc_update))
             }
-            _ => {
-                return Err(format!("incompatible types: {:?}, {:?}", acc, so))
-            }
         }
     }
     Ok(acc.clone())
@@ -278,7 +273,7 @@ fn run(cmd: &String) -> Result<StutterObject, String> {
 }
 
 fn main() {
-    let prompt = String::from("> ");
+    let prompt = String::from("λ ");
     loop {
         // Read
         let cmd = prompt_user(&prompt);
