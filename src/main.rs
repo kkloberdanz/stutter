@@ -15,6 +15,7 @@
 
 use std::io;
 use std::io::Write;
+use rayon::prelude::*;
 
 enum Input {
     Quit,
@@ -257,7 +258,7 @@ fn eval(ast: &AST) -> Result<StutterObject, String> {
         AST::Branch(op, xs) => {
             let v = xs.to_vec();
             let resolved: Vec<StutterObject> =
-                v.iter().map(|x| eval(x).unwrap()).collect();
+                v.par_iter().map(|x| eval(x).unwrap()).collect();
             let ans = reduce(op, &resolved)?;
             Ok(ans)
         }
