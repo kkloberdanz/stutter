@@ -5,12 +5,10 @@
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 3 of the License, or
  *  (at your option) any later version.
-
  *  Stutter is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
-
  *  You should have received a copy of the GNU General Public License
  *  along with Stutter.  If not, see <https://www.gnu.org/licenses/>.
  */
@@ -48,12 +46,12 @@ enum Op {
 enum Atom {
     Num(i64),
     Id(String),
+    Nil,
 }
 
 #[derive(Clone, Debug, PartialEq)]
 enum AST {
     Leaf(Atom),
-    List(Vec<AST>),
     Branch(Op, Vec<AST>),
 }
 
@@ -65,7 +63,7 @@ enum Production {
 
 #[derive(Clone, Debug, PartialEq)]
 enum StutterObject {
-    Nil,
+    Atom(Atom),
 }
 
 fn prompt_user(prompt: &String) -> Input {
@@ -237,25 +235,36 @@ fn parse(tokens: &Vec<Token>) -> Result<AST, String> {
     }
 }
 
+fn reduce(op: &Op, list: &Vec<StutterObject>) -> StutterObject {
+    let mut acc = 0;
+    for so in list.iter() {
+        match so {
+            StutterObject::Atom(a) => {
+                acc += match a {
+                    Atom::Num(n) => n,
+                    _ => panic!("unhandled StutterObject: {:?}", a),
+                }
+            }
+        }
+    }
+    StutterObject::Atom(Atom::Num(acc))
+}
+
 fn eval(ast: &AST) -> Result<StutterObject, String> {
     //Ok(StutterObject::Nil)
     match ast {
         AST::Branch(op, xs) => {
             println!("op = {:?}", op);
-            eval(&AST::List(xs.to_vec()))
-        }
-        AST::List(v) => {
-            let mut rec_v = Vec::new();
-            for item in v.iter() {
-                println!("item = {:?}", item);
-                rec_v.push(eval(&item)?);
-            }
-            //Ok(AST::List(rec_v))
-            Ok(StutterObject::Nil)
+            let v = xs.to_vec();
+            let resolved: Vec<StutterObject> =
+                v.iter().map(|x| eval(x).unwrap()).collect();
+            println!("resolved = {:?}", resolved);
+            let ans = reduce(op, &resolved);
+            Ok(ans)
         }
         AST::Leaf(atom) => {
             println!("atom = {:?}", atom);
-            Ok(StutterObject::Nil)
+            Ok(StutterObject::Atom(atom.clone()))
         }
     }
 }
@@ -263,12 +272,10 @@ fn eval(ast: &AST) -> Result<StutterObject, String> {
 fn main() {
     let prompt = String::from("> ");
     loop {
-
         // Read
         let cmd = prompt_user(&prompt);
         match cmd {
             Input::Command(s) => {
-
                 // Eval
                 let tokens = lex(&s);
                 match tokens {
@@ -277,19 +284,18 @@ fn main() {
                         let tree = parse(&t);
                         match tree {
                             Ok(t) => {
-                                println!("ast = {:?}", t);
+                                println!("ast = {:#?}", t);
                                 let result = eval(&t);
                                 match result {
-
                                     // Print
                                     Ok(so) => {
                                         println!("retult = {:?}", so);
-                                    },
+                                    }
                                     Err(e) => {
                                         println!("runtime error: {:?}", e);
                                     }
                                 }
-                            },
+                            }
                             Err(e) => println!("syntax error: {}", e),
                         }
                     }
