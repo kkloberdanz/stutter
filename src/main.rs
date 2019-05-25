@@ -256,7 +256,7 @@ fn reduce(op: &Op, list: &Vec<StutterObject>) -> StutterObject {
                 let acc_update = apply_op(op, &acc_val, operand);
                 acc = StutterObject::Atom(Atom::Num(acc_update))
             }
-            _ => panic!("incompatible types: {:?}, {:?}", acc, so)
+            _ => panic!("incompatible types: {:?}, {:?}", acc, so),
         }
     }
     acc.clone()
