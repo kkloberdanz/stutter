@@ -235,19 +235,31 @@ fn parse(tokens: &Vec<Token>) -> Result<AST, String> {
     }
 }
 
+fn apply_op(op: &Op, acc: &i64, operand: &i64) -> i64 {
+    match op {
+        Op::Add => acc + operand,
+        Op::Sub => acc - operand,
+        Op::Div => acc / operand,
+        Op::Mul => acc * operand,
+    }
+}
+
 fn reduce(op: &Op, list: &Vec<StutterObject>) -> StutterObject {
-    let mut acc = 0;
-    for so in list.iter() {
-        match so {
-            StutterObject::Atom(a) => {
-                acc += match a {
-                    Atom::Num(n) => n,
+    let mut acc = list[0].clone();
+    for so in list[1..].iter() {
+        match (&mut acc, so) {
+            (StutterObject::Atom(acc_atom), StutterObject::Atom(a)) => {
+                let (acc_val, operand) = match (acc_atom, a) {
+                    (Atom::Num(n1), Atom::Num(n2)) => (n1, n2),
                     _ => panic!("unhandled StutterObject: {:?}", a),
-                }
+                };
+                let acc_update = apply_op(op, &acc_val, operand);
+                acc = StutterObject::Atom(Atom::Num(acc_update))
             }
+            _ => panic!("incompatible types: {:?}, {:?}", acc, so)
         }
     }
-    StutterObject::Atom(Atom::Num(acc))
+    acc.clone()
 }
 
 fn eval(ast: &AST) -> Result<StutterObject, String> {
@@ -269,6 +281,13 @@ fn eval(ast: &AST) -> Result<StutterObject, String> {
     }
 }
 
+fn run(cmd: &String) -> Result<StutterObject, String> {
+    let tokens = lex(&cmd)?;
+    let tree = parse(&tokens)?;
+    let result = eval(&tree)?;
+    Ok(result)
+}
+
 fn main() {
     let prompt = String::from("> ");
     loop {
@@ -277,29 +296,12 @@ fn main() {
         match cmd {
             Input::Command(s) => {
                 // Eval
-                let tokens = lex(&s);
-                match tokens {
-                    Ok(t) => {
-                        println!("tokens = {:?}", t);
-                        let tree = parse(&t);
-                        match tree {
-                            Ok(t) => {
-                                println!("ast = {:#?}", t);
-                                let result = eval(&t);
-                                match result {
-                                    // Print
-                                    Ok(so) => {
-                                        println!("retult = {:?}", so);
-                                    }
-                                    Err(e) => {
-                                        println!("runtime error: {:?}", e);
-                                    }
-                                }
-                            }
-                            Err(e) => println!("syntax error: {}", e),
-                        }
-                    }
-                    Err(e) => println!("lexical error: {}", e),
+                let result = run(&s);
+
+                // Print
+                match result {
+                    Ok(r) => println!("{:?}", r),
+                    Err(e) => println!("error: {}", e),
                 }
             }
             Input::Quit => break,
@@ -309,4 +311,4 @@ fn main() {
     }
 }
 
-// test = (+ 1 2 3 (- 4 5) (* (/ 6 7) 8))
+// test = (+ 1 2 3 (- 4 5) (* (- 6 7) 8))
