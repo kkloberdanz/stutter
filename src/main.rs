@@ -19,6 +19,7 @@ use rayon::prelude::*;
 
 enum Input {
     Quit,
+    None,
     Command(String),
 }
 
@@ -76,6 +77,7 @@ fn prompt_user(prompt: &String) -> Input {
 
     match as_string.as_ref() {
         "q" => Input::Quit,
+        "" => Input::None,
         _ => Input::Command(as_string),
     }
 }
@@ -289,6 +291,7 @@ fn main() {
                     Err(e) => println!("error: {}", e),
                 }
             }
+            Input::None => continue,
             Input::Quit => break,
         };
 
