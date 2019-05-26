@@ -252,7 +252,7 @@ fn reduce(
             }
         }
     }
-    Ok(acc.clone())
+    Ok(acc)
 }
 
 fn eval(ast: &AST) -> Result<StutterObject, String> {
