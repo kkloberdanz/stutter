@@ -113,7 +113,7 @@ fn token_to_op(tok: &Token) -> Result<Op, String> {
         Token::Minus => Ok(Op::Sub),
         Token::Times => Ok(Op::Mul),
         Token::Slash => Ok(Op::Div),
-        Token::Id => Ok(Op::Func),
+        Token::Id(s) => Ok(Op::Func(s.to_string())),
         _ => Err(format!("invalid op: {:?}", tok)),
     }
 }
