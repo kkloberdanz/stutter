@@ -105,11 +105,11 @@ fn to_token(s: &String) -> Token {
     }
 }
 
-fn token_to_atom(tok: &Token) -> Option<Atom> {
+fn token_to_atom(tok: &Token) -> Result<Atom, String> {
     match tok {
-        Token::Id(s) => Some(Atom::Id(s.to_string())),
-        Token::Num(i) => Some(Atom::Num(*i)),
-        _ => None,
+        Token::Id(s) => Ok(Atom::Id(s.to_string())),
+        Token::Num(i) => Ok(Atom::Num(*i)),
+        _ => Err(format!("token: {:?} does not form a valid atom", tok)),
     }
 }
 
@@ -242,13 +242,13 @@ fn parse(tokens: &Vec<Token>) -> Result<ParseTree, String> {
     }
 }
 
-fn apply_op(op: &Op, acc: &i64, operand: &i64) -> i64 {
+fn apply_op(op: &Op, acc: &i64, operand: &i64) -> Result<i64, String> {
     match op {
-        Op::Add => acc + operand,
-        Op::Sub => acc - operand,
-        Op::Div => acc / operand,
-        Op::Mul => acc * operand,
-        Op::Func(name) => panic!("func not yet implemented"),
+        Op::Add => Ok(acc + operand),
+        Op::Sub => Ok(acc - operand),
+        Op::Div => Ok(acc / operand),
+        Op::Mul => Ok(acc * operand),
+        Op::Func(name) => Err(format!("func not yet implemented, got: {:?}", name)),
     }
 }
 
@@ -264,12 +264,12 @@ fn reduce(
                     (Atom::Num(n1), Atom::Num(n2)) => (n1, n2),
                     _ => {
                         return Err(format!(
-                            "unhandled StutterObject: {:?}",
+                            "unknown object: {:?}",
                             a
                         ))
                     }
                 };
-                let acc_update = apply_op(op, &acc_val, operand);
+                let acc_update = apply_op(op, &acc_val, operand)?;
                 acc = StutterObject::Atom(Atom::Num(acc_update))
             }
         }
@@ -277,6 +277,7 @@ fn reduce(
     Ok(acc)
 }
 
+/*
 fn eval(ast: &AST) -> Result<StutterObject, String> {
     match ast {
         AST::Branch(op, xs) => {
@@ -289,14 +290,30 @@ fn eval(ast: &AST) -> Result<StutterObject, String> {
         AST::Leaf(atom) => Ok(StutterObject::Atom(atom.clone())),
     }
 }
+*/
+
+fn eval(tree: &ParseTree) -> Result<StutterObject, String> {
+    match tree {
+        ParseTree::Branch(op, xs) => {
+            let v = xs.to_vec();
+            let resolved: Vec<StutterObject> =
+                v.par_iter().map(|x| eval(x).unwrap()).collect();
+            let ans = reduce(op, &resolved)?;
+            Ok(ans)
+        },
+        ParseTree::Leaf(tok) => {
+            let atom = token_to_atom(&tok)?;
+            Ok(StutterObject::Atom(atom))
+        },
+    }
+}
 
 fn run(cmd: &String) -> Result<StutterObject, String> {
     let tokens = lex(&cmd)?;
     let tree = parse(&tokens)?;
     println!("tree: {:#?}", tree);
-    //let result = eval(&tree)?;
-    //Ok(result)
-    Ok(StutterObject::Atom(Atom::Num(42)))
+    let result = eval(&tree)?;
+    Ok(result)
 }
 
 fn main() {
