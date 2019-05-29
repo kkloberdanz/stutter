@@ -173,7 +173,7 @@ fn lex(cmd: &String) -> Result<Vec<Token>, String> {
     }
 }
 
-fn push_tree(
+fn push_production(
     mut stack: Vec<Production>,
     mut list: Vec<ParseTree>,
 ) -> Result<Vec<Production>, String> {
@@ -210,7 +210,7 @@ fn parse(tokens: &Vec<Token>) -> Result<ParseTree, String> {
                     match v {
                         Production::Tok(t) => match t {
                             Token::Lparen => {
-                                stack = push_tree(stack, list)?;
+                                stack = push_production(stack, list)?;
                                 break;
                             }
                             _ => list.push(ParseTree::Leaf(t)),
