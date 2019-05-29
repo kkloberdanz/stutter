@@ -41,6 +41,7 @@ enum Op {
     Sub,
     Mul,
     Div,
+    Func(String)
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -112,6 +113,7 @@ fn token_to_op(tok: &Token) -> Result<Op, String> {
         Token::Minus => Ok(Op::Sub),
         Token::Times => Ok(Op::Mul),
         Token::Slash => Ok(Op::Div),
+        Token::Id => Ok(Op::Func),
         _ => Err(format!("invalid op: {:?}", tok)),
     }
 }
@@ -168,10 +170,12 @@ fn lex(cmd: &String) -> Result<Vec<Token>, String> {
 fn parse(tokens: &Vec<Token>) -> Result<AST, String> {
     let mut stack = Vec::new();
     for tok in tokens.iter() {
+        println!("stack: {:?}", stack);
         match tok {
             Token::Rparen => {
                 let mut list = Vec::new();
                 while let Some(v) = stack.pop() {
+                    println!("v: {:?}", v);
                     match v {
                         Production::Tok(t) => match t {
                             Token::Lparen => {
@@ -180,6 +184,7 @@ fn parse(tokens: &Vec<Token>) -> Result<AST, String> {
                             _ => match token_to_atom(&t) {
                                 Some(atom) => list.push(AST::Leaf(atom)),
                                 None => {
+                                    println!("t: {:?}", t);
                                     let op = token_to_op(&t)?;
                                     list.reverse();
                                     let branch = AST::Branch(op, list);
@@ -195,11 +200,7 @@ fn parse(tokens: &Vec<Token>) -> Result<AST, String> {
                             },
                         },
                         Production::Tree(tree) => {
-                            if stack.len() == 0 && tokens.len() == 0 {
-                                return Ok(tree);
-                            } else {
-                                list.push(tree);
-                            }
+                            list.push(tree);
                         }
                     }
                 }
@@ -227,6 +228,7 @@ fn apply_op(op: &Op, acc: &i64, operand: &i64) -> i64 {
         Op::Sub => acc - operand,
         Op::Div => acc / operand,
         Op::Mul => acc * operand,
+        Op::Func(name) => panic!("func not yet implemented"),
     }
 }
 
