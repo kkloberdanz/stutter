@@ -57,8 +57,14 @@ enum AST {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+enum ParseTree {
+    Leaf(Token),
+    Branch(Op, Vec<ParseTree>),
+}
+
+#[derive(Clone, Debug, PartialEq)]
 enum Production {
-    Tree(AST),
+    Tree(ParseTree),
     Tok(Token),
 }
 
@@ -167,37 +173,47 @@ fn lex(cmd: &String) -> Result<Vec<Token>, String> {
     }
 }
 
-fn parse(tokens: &Vec<Token>) -> Result<AST, String> {
+fn push_tree(mut stack: Vec<Production>, mut list: Vec<ParseTree>) -> Result<Vec<Production>, String> {
+    println!("list: {:?}", list);
+    let op_option = list.pop();
+    match op_option {
+        Some(op_leaf) => {
+            match op_leaf {
+                // TODO: fix this for lambdas
+                ParseTree::Branch(_, _) => {
+                    return Err(String::from("syntax error, expecting op not tree: {:?}"));
+                },
+                ParseTree::Leaf(op_tok) => {
+                    let op = token_to_op(&op_tok)?;
+                    list.reverse();
+                    let branch = ParseTree::Branch(op, list);
+                    stack.push(Production::Tree(branch));
+                    return Ok(stack);
+                }
+            }
+
+        },
+        None => return Err(String::from("syntax error")),
+    }
+}
+
+fn parse(tokens: &Vec<Token>) -> Result<ParseTree, String> {
     let mut stack = Vec::new();
+    println!("tokens: {:?}", tokens);
     for tok in tokens.iter() {
         println!("stack: {:?}", stack);
         match tok {
             Token::Rparen => {
-                let mut list = Vec::new();
+                let mut list: Vec<ParseTree> = Vec::new();
                 while let Some(v) = stack.pop() {
                     println!("v: {:?}", v);
                     match v {
                         Production::Tok(t) => match t {
                             Token::Lparen => {
+                                stack = push_tree(stack, list)?;
                                 break;
                             }
-                            _ => match token_to_atom(&t) {
-                                Some(atom) => list.push(AST::Leaf(atom)),
-                                None => {
-                                    println!("t: {:?}", t);
-                                    let op = token_to_op(&t)?;
-                                    list.reverse();
-                                    let branch = AST::Branch(op, list);
-                                    let top = stack.pop().unwrap();
-                                    if top != Production::Tok(Token::Lparen) {
-                                        return Err(String::from(
-                                            "expected '('",
-                                        ));
-                                    }
-                                    stack.push(Production::Tree(branch));
-                                    break;
-                                }
-                            },
+                            _ => list.push(ParseTree::Leaf(t)),
                         },
                         Production::Tree(tree) => {
                             list.push(tree);
@@ -273,8 +289,10 @@ fn eval(ast: &AST) -> Result<StutterObject, String> {
 fn run(cmd: &String) -> Result<StutterObject, String> {
     let tokens = lex(&cmd)?;
     let tree = parse(&tokens)?;
-    let result = eval(&tree)?;
-    Ok(result)
+    println!("tree: {:#?}", tree);
+    //let result = eval(&tree)?;
+    //Ok(result)
+    Ok(StutterObject::Atom(Atom::Num(42)))
 }
 
 fn main() {
