@@ -13,9 +13,9 @@
 // You should have received a copy of the GNU General Public License
 // along with Stutter.  If not, see <https://www.gnu.org/licenses/>.
 
+use rayon::prelude::*;
 use std::io;
 use std::io::Write;
-use rayon::prelude::*;
 
 enum Input {
     Quit,
@@ -41,7 +41,7 @@ enum Op {
     Sub,
     Mul,
     Div,
-    Func(String)
+    Func(String),
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -173,7 +173,10 @@ fn lex(cmd: &String) -> Result<Vec<Token>, String> {
     }
 }
 
-fn push_tree(mut stack: Vec<Production>, mut list: Vec<ParseTree>) -> Result<Vec<Production>, String> {
+fn push_tree(
+    mut stack: Vec<Production>,
+    mut list: Vec<ParseTree>,
+) -> Result<Vec<Production>, String> {
     println!("list: {:?}", list);
     let op_option = list.pop();
     match op_option {
@@ -181,8 +184,10 @@ fn push_tree(mut stack: Vec<Production>, mut list: Vec<ParseTree>) -> Result<Vec
             match op_leaf {
                 // TODO: fix this for lambdas
                 ParseTree::Branch(_, _) => {
-                    return Err(String::from("syntax error, expecting op not tree: {:?}"));
-                },
+                    return Err(String::from(
+                        "syntax error, expecting op not tree: {:?}",
+                    ));
+                }
                 ParseTree::Leaf(op_tok) => {
                     let op = token_to_op(&op_tok)?;
                     list.reverse();
@@ -191,8 +196,7 @@ fn push_tree(mut stack: Vec<Production>, mut list: Vec<ParseTree>) -> Result<Vec
                     return Ok(stack);
                 }
             }
-
-        },
+        }
         None => return Err(String::from("syntax error")),
     }
 }
