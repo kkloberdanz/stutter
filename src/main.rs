@@ -45,15 +45,9 @@ enum Op {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-enum Atom {
+enum StutterObject {
     Num(i64),
     Id(String),
-}
-
-#[derive(Clone, Debug, PartialEq)]
-enum AST {
-    Leaf(Atom),
-    Branch(Op, Vec<AST>),
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -66,11 +60,6 @@ enum ParseTree {
 enum Production {
     Tree(ParseTree),
     Tok(Token),
-}
-
-#[derive(Clone, Debug, PartialEq)]
-enum StutterObject {
-    Atom(Atom),
 }
 
 fn prompt_user(prompt: &String) -> Input {
@@ -105,10 +94,10 @@ fn to_token(s: &String) -> Token {
     }
 }
 
-fn token_to_atom(tok: &Token) -> Result<Atom, String> {
+fn token_to_stutterobject(tok: &Token) -> Result<StutterObject, String> {
     match tok {
-        Token::Id(s) => Ok(Atom::Id(s.to_string())),
-        Token::Num(i) => Ok(Atom::Num(*i)),
+        Token::Id(s) => Ok(StutterObject::Id(s.to_string())),
+        Token::Num(i) => Ok(StutterObject::Num(*i)),
         _ => Err(format!("token: {:?} does not form a valid atom", tok)),
     }
 }
@@ -238,12 +227,16 @@ fn parse(tokens: &Vec<Token>) -> Result<ParseTree, String> {
     }
 }
 
-fn apply_op(op: &Op, acc: &i64, operand: &i64) -> Result<i64, String> {
+fn apply_op(op: &Op, acc: &StutterObject, operand: &StutterObject) -> Result<StutterObject, String> {
+    let (acc_val, operand_val) = match (acc, operand) {
+        (StutterObject::Num(n1), StutterObject::Num(n2)) => (n1, n2),
+        _ => return Err(format!("StutterObject type: ({:?} {:?} {:?}) not yet implemented", op, acc, operand))
+    };
     match op {
-        Op::Add => Ok(acc + operand),
-        Op::Sub => Ok(acc - operand),
-        Op::Div => Ok(acc / operand),
-        Op::Mul => Ok(acc * operand),
+        Op::Add => Ok(StutterObject::Num(acc_val + operand_val)),
+        Op::Sub => Ok(StutterObject::Num(acc_val - operand_val)),
+        Op::Div => Ok(StutterObject::Num(acc_val / operand_val)),
+        Op::Mul => Ok(StutterObject::Num(acc_val * operand_val)),
         Op::Func(name) => {
             Err(format!("func not yet implemented, got: {:?}", name))
         }
@@ -255,35 +248,11 @@ fn reduce(
     list: &Vec<StutterObject>,
 ) -> Result<StutterObject, String> {
     let mut acc = list[0].clone();
-    for so in list[1..].iter() {
-        match (&mut acc, so) {
-            (StutterObject::Atom(acc_atom), StutterObject::Atom(a)) => {
-                let (acc_val, operand) = match (acc_atom, a) {
-                    (Atom::Num(n1), Atom::Num(n2)) => (n1, n2),
-                    _ => return Err(format!("unknown object: {:?}", a)),
-                };
-                let acc_update = apply_op(op, &acc_val, operand)?;
-                acc = StutterObject::Atom(Atom::Num(acc_update))
-            }
-        }
+    for operand in list[1..].iter() {
+        acc = apply_op(op, &acc, &operand)?;
     }
     Ok(acc)
 }
-
-/*
-fn eval(ast: &AST) -> Result<StutterObject, String> {
-    match ast {
-        AST::Branch(op, xs) => {
-            let v = xs.to_vec();
-            let resolved: Vec<StutterObject> =
-                v.par_iter().map(|x| eval(x).unwrap()).collect();
-            let ans = reduce(op, &resolved)?;
-            Ok(ans)
-        }
-        AST::Leaf(atom) => Ok(StutterObject::Atom(atom.clone())),
-    }
-}
-*/
 
 fn eval(tree: &ParseTree) -> Result<StutterObject, String> {
     match tree {
@@ -295,8 +264,8 @@ fn eval(tree: &ParseTree) -> Result<StutterObject, String> {
             Ok(ans)
         }
         ParseTree::Leaf(tok) => {
-            let atom = token_to_atom(&tok)?;
-            Ok(StutterObject::Atom(atom))
+            let st = token_to_stutterobject(&tok)?;
+            Ok(st)
         }
     }
 }
