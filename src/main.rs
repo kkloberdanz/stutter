@@ -232,22 +232,21 @@ fn apply_op(
     acc: &StutterObject,
     operand: &StutterObject,
 ) -> Result<StutterObject, String> {
-    let (acc_val, operand_val) = match (acc, operand) {
-        (StutterObject::Num(n1), StutterObject::Num(n2)) => (n1, n2),
+    match (acc, operand) {
+        (StutterObject::Num(n1), StutterObject::Num(n2)) => match op {
+            Op::Add => Ok(StutterObject::Num(n1 + n2)),
+            Op::Sub => Ok(StutterObject::Num(n1 - n2)),
+            Op::Div => Ok(StutterObject::Num(n1 / n2)),
+            Op::Mul => Ok(StutterObject::Num(n1 * n2)),
+            Op::Func(_) => {
+                Err(format!("func not yet implemented, got: {:?}", op))
+            }
+        },
         _ => {
             return Err(format!(
                 "StutterObject type: ({:?} {:?} {:?}) not yet implemented",
                 op, acc, operand
             ))
-        }
-    };
-    match op {
-        Op::Add => Ok(StutterObject::Num(acc_val + operand_val)),
-        Op::Sub => Ok(StutterObject::Num(acc_val - operand_val)),
-        Op::Div => Ok(StutterObject::Num(acc_val / operand_val)),
-        Op::Mul => Ok(StutterObject::Num(acc_val * operand_val)),
-        Op::Func(name) => {
-            Err(format!("func not yet implemented, got: {:?}", name))
         }
     }
 }
