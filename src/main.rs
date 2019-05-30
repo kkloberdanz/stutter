@@ -32,6 +32,7 @@ enum Token {
     Times,
     Slash,
     Num(i64),
+    Dec(f64),
     Id(String),
 }
 
@@ -47,6 +48,7 @@ enum Op {
 #[derive(Clone, Debug, PartialEq)]
 enum StutterObject {
     Num(i64),
+    Dec(f64),
     Id(String),
 }
 
@@ -81,6 +83,8 @@ fn prompt_user(prompt: &String) -> Input {
 fn to_token(s: &String) -> Token {
     if let Ok(t) = s.parse::<i64>() {
         Token::Num(t)
+    } else if let Ok(t) = s.parse::<f64>() {
+        Token::Dec(t)
     } else {
         match s.as_ref() {
             "(" => Token::Lparen,
@@ -98,6 +102,7 @@ fn token_to_stutterobject(tok: &Token) -> Result<StutterObject, String> {
     match tok {
         Token::Id(s) => Ok(StutterObject::Id(s.to_string())),
         Token::Num(i) => Ok(StutterObject::Num(*i)),
+        Token::Dec(f) => Ok(StutterObject::Dec(*f)),
         _ => Err(format!("token: {:?} does not form a valid atom", tok)),
     }
 }
@@ -242,9 +247,18 @@ fn apply_op(
                 Err(format!("func not yet implemented, got: {:?}", op))
             }
         },
+        (StutterObject::Dec(f1), StutterObject::Dec(f2)) => match op {
+            Op::Add => Ok(StutterObject::Dec(f1 + f2)),
+            Op::Sub => Ok(StutterObject::Dec(f1 - f2)),
+            Op::Div => Ok(StutterObject::Dec(f1 / f2)),
+            Op::Mul => Ok(StutterObject::Dec(f1 * f2)),
+            Op::Func(_) => {
+                Err(format!("func not yet implemented, got: {:?}", op))
+            }
+        },
         _ => {
             return Err(format!(
-                "StutterObject type: ({:?} {:?} {:?}) not yet implemented",
+                "type error: ({:?} {:?} {:?}) not supported",
                 op, acc, operand
             ))
         }
