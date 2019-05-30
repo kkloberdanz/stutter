@@ -227,10 +227,19 @@ fn parse(tokens: &Vec<Token>) -> Result<ParseTree, String> {
     }
 }
 
-fn apply_op(op: &Op, acc: &StutterObject, operand: &StutterObject) -> Result<StutterObject, String> {
+fn apply_op(
+    op: &Op,
+    acc: &StutterObject,
+    operand: &StutterObject,
+) -> Result<StutterObject, String> {
     let (acc_val, operand_val) = match (acc, operand) {
         (StutterObject::Num(n1), StutterObject::Num(n2)) => (n1, n2),
-        _ => return Err(format!("StutterObject type: ({:?} {:?} {:?}) not yet implemented", op, acc, operand))
+        _ => {
+            return Err(format!(
+                "StutterObject type: ({:?} {:?} {:?}) not yet implemented",
+                op, acc, operand
+            ))
+        }
     };
     match op {
         Op::Add => Ok(StutterObject::Num(acc_val + operand_val)),
