@@ -280,9 +280,9 @@ fn eval(tree: &ParseTree) -> Result<StutterObject, String> {
     match tree {
         ParseTree::Branch(op, xs) => {
             let v = xs.to_vec();
-            let resolved: Vec<StutterObject> =
-                v.par_iter().map(|x| eval(x).unwrap()).collect();
-            let ans = reduce(op, &resolved)?;
+            let resolved: Result<Vec<StutterObject>, String> =
+                v.par_iter().map(eval).collect();
+            let ans = reduce(op, &resolved?)?;
             Ok(ans)
         }
         ParseTree::Leaf(tok) => {
