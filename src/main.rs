@@ -182,20 +182,20 @@ fn push_production(
             match op_leaf {
                 // TODO: fix this for lambdas
                 ParseTree::Branch(_, _) => {
-                    return Err(String::from(
+                    Err(String::from(
                         "syntax error, expecting op not tree: {:?}",
-                    ));
+                    ))
                 }
                 ParseTree::Leaf(op_tok) => {
                     let op = token_to_op(&op_tok)?;
                     list.reverse();
                     let branch = ParseTree::Branch(op, list);
                     stack.push(Production::Tree(branch));
-                    return Ok(stack);
+                    Ok(stack)
                 }
             }
         }
-        None => return Err(String::from("syntax error")),
+        None => Err(String::from("syntax error")),
     }
 }
 
