@@ -32,7 +32,7 @@ enum Token {
     Minus,
     Times,
     Slash,
-    Def,
+    Let,
     Num(i64),
     Dec(f64),
     Id(String),
@@ -44,7 +44,7 @@ enum Op {
     Sub,
     Mul,
     Div,
-    Def,
+    Let,
     Func(String),
 }
 
@@ -96,7 +96,7 @@ fn to_token(s: &String) -> Token {
             "-" => Token::Minus,
             "*" => Token::Times,
             "/" => Token::Slash,
-            "def" => Token::Def,
+            "let" => Token::Let,
             _ => Token::Id(s.to_string()),
         }
     }
@@ -117,7 +117,7 @@ fn token_to_op(tok: &Token) -> Result<Op, String> {
         Token::Minus => Ok(Op::Sub),
         Token::Times => Ok(Op::Mul),
         Token::Slash => Ok(Op::Div),
-        Token::Def => Ok(Op::Def),
+        Token::Let => Ok(Op::Let),
         Token::Id(s) => Ok(Op::Func(s.to_string())),
         _ => Err(format!("invalid op: {:?}", tok)),
     }
@@ -314,11 +314,11 @@ fn eval(
                 Op::Func(name) => {
                     Err(format!("funcitons not implemented, got {:?}", name))
                 }
-                Op::Def => {
+                Op::Let => {
                     if xs.len() != 3 {
                         let msg =
                             format!(
-                            "syntax error, expecting (def VAR VALUE IN_EXPR) \
+                            "syntax error, expecting (let VAR VALUE IN_EXPR) \
                              assignment expression: ({:?} {:?})", op, xs);
                         Err(msg)
                     } else {
