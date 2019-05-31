@@ -14,7 +14,7 @@
 // along with Stutter.  If not, see <https://www.gnu.org/licenses/>.
 
 use rayon::prelude::*;
-use std::collections::HashMap;
+use rpds::HashTrieMap;
 use std::io;
 use std::io::Write;
 
@@ -239,7 +239,7 @@ fn parse(tokens: &Vec<Token>) -> Result<ParseTree, String> {
 
 fn lookup_env(
     obj: &StutterObject,
-    env: &HashMap<String, StutterObject>,
+    env: &HashTrieMap<String, StutterObject>,
 ) -> Result<StutterObject, String> {
     match obj {
         StutterObject::Id(variable_name) => match env.get(variable_name) {
@@ -254,7 +254,7 @@ fn apply_op(
     op: &Op,
     acc: &StutterObject,
     operand: &StutterObject,
-    env: &HashMap<String, StutterObject>,
+    env: &HashTrieMap<String, StutterObject>,
 ) -> Result<StutterObject, String> {
     let resolved_operand = lookup_env(&operand, &env)?;
     let resolved_acc = lookup_env(&acc, &env)?;
@@ -288,7 +288,7 @@ fn apply_op(
 fn reduce(
     op: &Op,
     list: &Vec<StutterObject>,
-    env: &HashMap<String, StutterObject>,
+    env: &HashTrieMap<String, StutterObject>,
 ) -> Result<StutterObject, String> {
     let mut acc = list[0].clone();
     for operand in list[1..].iter() {
@@ -299,7 +299,7 @@ fn reduce(
 
 fn eval(
     tree: &ParseTree,
-    env: &HashMap<String, StutterObject>,
+    env: &HashTrieMap<String, StutterObject>,
 ) -> Result<StutterObject, String> {
     match tree {
         ParseTree::Branch(op, xs) => {
@@ -309,7 +309,7 @@ fn eval(
 
             match op {
                 Op::Add | Op::Sub | Op::Mul | Op::Div => {
-                    Ok(reduce(op, &resolved?, &env)?)
+                    reduce(op, &resolved?, &env)
                 }
                 Op::Func(name) => {
                     Err(format!("funcitons not implemented, got {:?}", name))
@@ -328,13 +328,9 @@ fn eval(
                         match variable {
                             ParseTree::Leaf(tok) => match tok {
                                 Token::Id(name) => {
-                                    let mut new_env = env.clone();
-                                    new_env.insert(
-                                        name.clone().to_string(),
-                                        value.clone(),
-                                    );
-                                    let ans = eval(expr, &new_env)?;
-                                    Ok(ans)
+                                    eval(expr,
+                                         &env.insert(name.clone().to_string(),
+                                                     value.clone()))
                                 }
                                 _ => Err(format!(
                                     "error: invalid type for variable: {:?}",
@@ -351,8 +347,7 @@ fn eval(
             }
         }
         ParseTree::Leaf(tok) => {
-            let st = token_to_stutterobject(&tok)?;
-            Ok(st)
+            token_to_stutterobject(&tok)
         }
     }
 }
@@ -360,7 +355,7 @@ fn eval(
 fn run(cmd: &String) -> Result<StutterObject, String> {
     let tokens = lex(&cmd)?;
     let tree = parse(&tokens)?;
-    let env = HashMap::new();
+    let env = HashTrieMap::new();
     let result = eval(&tree, &env)?;
     Ok(result)
 }
