@@ -14,6 +14,7 @@
 // along with Stutter.  If not, see <https://www.gnu.org/licenses/>.
 
 use rayon::prelude::*;
+use std::collections::HashMap;
 use std::io;
 use std::io::Write;
 
@@ -31,6 +32,7 @@ enum Token {
     Minus,
     Times,
     Slash,
+    Def,
     Num(i64),
     Dec(f64),
     Id(String),
@@ -42,6 +44,7 @@ enum Op {
     Sub,
     Mul,
     Div,
+    Def,
     Func(String),
 }
 
@@ -93,6 +96,7 @@ fn to_token(s: &String) -> Token {
             "-" => Token::Minus,
             "*" => Token::Times,
             "/" => Token::Slash,
+            "def" => Token::Def,
             _ => Token::Id(s.to_string()),
         }
     }
@@ -113,6 +117,7 @@ fn token_to_op(tok: &Token) -> Result<Op, String> {
         Token::Minus => Ok(Op::Sub),
         Token::Times => Ok(Op::Mul),
         Token::Slash => Ok(Op::Div),
+        Token::Def => Ok(Op::Def),
         Token::Id(s) => Ok(Op::Func(s.to_string())),
         _ => Err(format!("invalid op: {:?}", tok)),
     }
@@ -232,35 +237,50 @@ fn parse(tokens: &Vec<Token>) -> Result<ParseTree, String> {
     }
 }
 
+fn lookup_env(
+    obj: &StutterObject,
+    env: &HashMap<String, StutterObject>,
+) -> Result<StutterObject, String> {
+    match obj {
+        StutterObject::Id(variable_name) => match env.get(variable_name) {
+            Some(value) => Ok(value.clone()),
+            None => Err(format!("{} not in scope", variable_name)),
+        },
+        _ => Ok(obj.clone()),
+    }
+}
+
 fn apply_op(
     op: &Op,
     acc: &StutterObject,
     operand: &StutterObject,
+    env: &HashMap<String, StutterObject>,
 ) -> Result<StutterObject, String> {
-    match (acc, operand) {
+    let resolved_operand = lookup_env(&operand, &env)?;
+    let resolved_acc = lookup_env(&acc, &env)?;
+    match (resolved_acc, resolved_operand) {
         (StutterObject::Num(n1), StutterObject::Num(n2)) => match op {
             Op::Add => Ok(StutterObject::Num(n1 + n2)),
             Op::Sub => Ok(StutterObject::Num(n1 - n2)),
             Op::Div => Ok(StutterObject::Num(n1 / n2)),
             Op::Mul => Ok(StutterObject::Num(n1 * n2)),
-            Op::Func(_) => {
-                Err(format!("func not yet implemented, got: {:?}", op))
-            }
+            _ => Err(format!("{:?} not implemented", op)),
         },
         (StutterObject::Dec(f1), StutterObject::Dec(f2)) => match op {
             Op::Add => Ok(StutterObject::Dec(f1 + f2)),
             Op::Sub => Ok(StutterObject::Dec(f1 - f2)),
             Op::Div => Ok(StutterObject::Dec(f1 / f2)),
             Op::Mul => Ok(StutterObject::Dec(f1 * f2)),
-            Op::Func(_) => {
-                Err(format!("func not yet implemented, got: {:?}", op))
-            }
+            _ => Err(format!("{:?} not implemented", op)),
         },
         _ => {
-            return Err(format!(
+            let msg = format!(
                 "type error: ({:?} {:?} {:?}) not supported",
-                op, acc, operand
-            ))
+                op,
+                lookup_env(&acc, &env)?,
+                lookup_env(&operand, &env)?
+            );
+            Err(msg)
         }
     }
 }
@@ -268,22 +288,67 @@ fn apply_op(
 fn reduce(
     op: &Op,
     list: &Vec<StutterObject>,
+    env: &HashMap<String, StutterObject>,
 ) -> Result<StutterObject, String> {
     let mut acc = list[0].clone();
     for operand in list[1..].iter() {
-        acc = apply_op(op, &acc, &operand)?;
+        acc = apply_op(op, &acc, &operand, env)?;
     }
     Ok(acc)
 }
 
-fn eval(tree: &ParseTree) -> Result<StutterObject, String> {
+fn eval(
+    tree: &ParseTree,
+    env: &HashMap<String, StutterObject>,
+) -> Result<StutterObject, String> {
     match tree {
         ParseTree::Branch(op, xs) => {
             let v = xs.to_vec();
             let resolved: Result<Vec<StutterObject>, String> =
-                v.par_iter().map(eval).collect();
-            let ans = reduce(op, &resolved?)?;
-            Ok(ans)
+                v.par_iter().map(|expr| eval(&expr, &env)).collect();
+
+            match op {
+                Op::Add | Op::Sub | Op::Mul | Op::Div => {
+                    Ok(reduce(op, &resolved?, &env)?)
+                }
+                Op::Func(name) => {
+                    Err(format!("funcitons not implemented, got {:?}", name))
+                }
+                Op::Def => {
+                    if xs.len() != 3 {
+                        let msg =
+                            format!(
+                            "syntax error, expecting (def VAR VALUE IN_EXPR) \
+                             assignment expression: ({:?} {:?})", op, xs);
+                        Err(msg)
+                    } else {
+                        let variable = &xs[0];
+                        let value = eval(&xs[1], &env)?;
+                        let expr = &xs[2];
+                        match variable {
+                            ParseTree::Leaf(tok) => match tok {
+                                Token::Id(name) => {
+                                    let mut new_env = env.clone();
+                                    new_env.insert(
+                                        name.clone().to_string(),
+                                        value.clone(),
+                                    );
+                                    let ans = eval(expr, &new_env)?;
+                                    Ok(ans)
+                                }
+                                _ => Err(format!(
+                                    "error: invalid type for variable: {:?}",
+                                    variable
+                                )),
+                            },
+                            _ => Err(format!(
+                                "error: invalid type for variable: {:?}",
+                                variable
+                            )),
+                        }
+                    }
+                }
+            }
         }
         ParseTree::Leaf(tok) => {
             let st = token_to_stutterobject(&tok)?;
@@ -295,7 +360,8 @@ fn eval(tree: &ParseTree) -> Result<StutterObject, String> {
 fn run(cmd: &String) -> Result<StutterObject, String> {
     let tokens = lex(&cmd)?;
     let tree = parse(&tokens)?;
-    let result = eval(&tree)?;
+    let env = HashMap::new();
+    let result = eval(&tree, &env)?;
     Ok(result)
 }
 
