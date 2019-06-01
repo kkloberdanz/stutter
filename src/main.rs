@@ -181,11 +181,9 @@ fn push_production(
         Some(op_leaf) => {
             match op_leaf {
                 // TODO: fix this for lambdas
-                ParseTree::Branch(_, _) => {
-                    Err(String::from(
-                        "syntax error, expecting op not tree: {:?}",
-                    ))
-                }
+                ParseTree::Branch(_, _) => Err(String::from(
+                    "syntax error, expecting op not tree: {:?}",
+                )),
                 ParseTree::Leaf(op_tok) => {
                     let op = token_to_op(&op_tok)?;
                     list.reverse();
@@ -315,27 +313,33 @@ fn eval(
                     Err(format!("funcitons not implemented, got {:?}", name))
                 }
                 Op::Let => {
-                    let expr = &xs[xs.len()-1];
+                    let expr = &xs[xs.len() - 1];
                     let mut new_env = env.clone();
-                    for branch in xs[..xs.len()-1].iter() {
+                    for branch in xs[..xs.len() - 1].iter() {
                         let (var, val) = match branch {
-                            ParseTree::Branch(var_op, val_vec) => {
-                                match var_op {
-                                    Op::Func(name) => (name, eval(&val_vec[0], &new_env)?),
-                                    _ => return Err(String::from("not a variable")),
+                            ParseTree::Branch(var_op, val_vec) => match var_op
+                            {
+                                Op::Func(name) => {
+                                    (name, eval(&val_vec[0], &new_env)?)
+                                }
+                                _ => {
+                                    return Err(String::from("not a variable"))
                                 }
                             },
-                            _ => return Err(String::from("expecting variable assignment")),
+                            _ => {
+                                return Err(String::from(
+                                    "expecting variable assignment",
+                                ))
+                            }
                         };
-                        new_env = new_env.clone().insert(var.clone(), val.clone());
+                        new_env =
+                            new_env.clone().insert(var.clone(), val.clone());
                     }
                     eval(&expr, &new_env)
                 }
             }
         }
-        ParseTree::Leaf(tok) => {
-            token_to_stutterobject(&tok)
-        }
+        ParseTree::Leaf(tok) => token_to_stutterobject(&tok),
     }
 }
 
