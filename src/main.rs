@@ -181,9 +181,10 @@ fn push_production(
     match op_option {
         Some(op_leaf) => {
             match op_leaf {
-                // TODO: fix this for lambdas
-                ParseTree::Branch(_, _) => Err(String::from(
+                // TODO: fix this for calling lambdas
+                ParseTree::Branch(_, _) => Err(format!(
                     "syntax error, expecting op not tree: {:?}",
+                    op_leaf
                 )),
                 ParseTree::Leaf(op_tok) => {
                     let op = token_to_op(&op_tok)?;
@@ -222,6 +223,7 @@ fn parse(tokens: &Vec<Token>) -> Result<ParseTree, String> {
             _ => stack.push(Production::Tok(tok.clone())),
         }
     }
+    println!("len: {}, stack = {:#?}", stack.len(), stack);
     if stack.len() == 1 {
         let top = stack[0].clone();
         match top {
@@ -313,11 +315,14 @@ fn eval(
                 Op::Func(name) => {
                     let func_body = env.get(name);
                     match func_body {
-                        // lambda will be stored as StutterObject
-                        // and will be evaluated at this point.
-                        // match on body for lambda to get ParseTree
-                        // and eval the ParseTree
-                        Some(body) => Ok(body.clone()),
+                        Some(body) => {
+                            match body {
+                                StutterObject::Lambda(tree) => {
+                                    eval(&tree, &env)
+                                }
+                                _ => Ok(body.clone()),
+                            }
+                        }
                         None => Err(format!("func: {} not in scope", name)),
                     }
                 }
