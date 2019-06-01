@@ -53,6 +53,7 @@ enum StutterObject {
     Num(i64),
     Dec(f64),
     Id(String),
+    Lambda(ParseTree),
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -310,7 +311,15 @@ fn eval(
                     reduce(op, &resolved?, &env)
                 }
                 Op::Func(name) => {
-                    Err(format!("funcitons not implemented, got {:?}", name))
+                    let func_body = env.get(name);
+                    match func_body {
+                        // lambda will be stored as StutterObject
+                        // and will be evaluated at this point.
+                        // match on body for lambda to get ParseTree
+                        // and eval the ParseTree
+                        Some(body) => Ok(body.clone()),
+                        None => Err(format!("{} not in scope", name)),
+                    }
                 }
                 Op::Let => {
                     let expr = &xs[xs.len() - 1];
@@ -320,7 +329,14 @@ fn eval(
                             ParseTree::Branch(var_op, val_vec) => match var_op
                             {
                                 Op::Func(name) => {
-                                    (name, eval(&val_vec[0], &new_env)?)
+                                    if val_vec.len() != 1 {
+                                        return Err(format!(
+                                            "syntax error: {:?}",
+                                            val_vec
+                                        ));
+                                    } else {
+                                        (name, eval(&val_vec[0], &new_env)?)
+                                    }
                                 }
                                 _ => {
                                     return Err(String::from("not a variable"))
