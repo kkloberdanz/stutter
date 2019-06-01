@@ -318,7 +318,7 @@ fn eval(
                         // match on body for lambda to get ParseTree
                         // and eval the ParseTree
                         Some(body) => Ok(body.clone()),
-                        None => Err(format!("{} not in scope", name)),
+                        None => Err(format!("func: {} not in scope", name)),
                     }
                 }
                 Op::Let => {
@@ -330,24 +330,25 @@ fn eval(
                             {
                                 Op::Func(name) => {
                                     if val_vec.len() != 1 {
-                                        return Err(format!(
+                                        Err(format!(
                                             "syntax error: {:?}",
                                             val_vec
-                                        ));
+                                        ))
                                     } else {
-                                        (name, eval(&val_vec[0], &new_env)?)
+                                        Ok((name,
+                                            eval(&val_vec[0], &new_env)?))
                                     }
                                 }
                                 _ => {
-                                    return Err(String::from("not a variable"))
+                                    Err(String::from("not a variable"))
                                 }
                             },
                             _ => {
-                                return Err(String::from(
+                                Err(String::from(
                                     "expecting variable assignment",
                                 ))
                             }
-                        };
+                        }?;
                         new_env =
                             new_env.clone().insert(var.clone(), val.clone());
                     }
@@ -355,7 +356,13 @@ fn eval(
                 }
             }
         }
-        ParseTree::Leaf(tok) => token_to_stutterobject(&tok),
+        ParseTree::Leaf(tok) => {
+            let obj = token_to_stutterobject(&tok)?;
+            match obj {
+                StutterObject::Id(_) => lookup_env(&obj, &env),
+                _ => Ok(obj),
+            }
+        }
     }
 }
 
