@@ -315,34 +315,21 @@ fn eval(
                     Err(format!("funcitons not implemented, got {:?}", name))
                 }
                 Op::Let => {
-                    if xs.len() != 3 {
-                        let msg =
-                            format!(
-                            "syntax error, expecting (let VAR VALUE IN_EXPR) \
-                             assignment expression: ({:?} {:?})", op, xs);
-                        Err(msg)
-                    } else {
-                        let variable = &xs[0];
-                        let value = eval(&xs[1], &env)?;
-                        let expr = &xs[2];
-                        match variable {
-                            ParseTree::Leaf(tok) => match tok {
-                                Token::Id(name) => {
-                                    eval(expr,
-                                         &env.insert(name.clone().to_string(),
-                                                     value.clone()))
+                    let expr = &xs[xs.len()-1];
+                    let mut new_env = env.clone();
+                    for branch in xs[..xs.len()-1].iter() {
+                        let (var, val) = match branch {
+                            ParseTree::Branch(var_op, val_vec) => {
+                                match var_op {
+                                    Op::Func(name) => (name, eval(&val_vec[0], &new_env)?),
+                                    _ => return Err(String::from("not a variable")),
                                 }
-                                _ => Err(format!(
-                                    "error: invalid type for variable: {:?}",
-                                    variable
-                                )),
                             },
-                            _ => Err(format!(
-                                "error: invalid type for variable: {:?}",
-                                variable
-                            )),
-                        }
+                            _ => return Err(String::from("expecting variable assignment")),
+                        };
+                        new_env = new_env.clone().insert(var.clone(), val.clone());
                     }
+                    eval(&expr, &new_env)
                 }
             }
         }
