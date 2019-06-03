@@ -21,6 +21,7 @@ use std::io::Write;
 enum Input {
     Quit,
     None,
+    Err(String),
     Command(String),
 }
 
@@ -53,7 +54,7 @@ enum StutterObject {
     Num(i64),
     Dec(f64),
     Id(String),
-    Lambda(ParseTree),
+    Lambda(Vec<String>, ParseTree),
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -68,6 +69,16 @@ enum Production {
     Tok(Token),
 }
 
+fn count_chars(s: &String, c: char) -> i64 {
+    let mut acc = 0;
+    for letter in s.chars() {
+        if letter == c {
+            acc += 1;
+        }
+    }
+    acc
+}
+
 fn prompt_user(prompt: &String) -> Input {
     print!("{}", prompt);
     io::stdout().flush().ok().expect("Could not flush stdout");
@@ -76,6 +87,9 @@ fn prompt_user(prompt: &String) -> Input {
         .read_line(&mut user_input)
         .expect("failed to read stdin");
     let as_string = user_input.trim().to_string();
+    if count_chars(&as_string, '(') != count_chars(&as_string, ')') {
+        return Input::Err(String::from("unmatched parens"));
+    }
 
     match as_string.as_ref() {
         "q" => Input::Quit,
@@ -223,7 +237,6 @@ fn parse(tokens: &Vec<Token>) -> Result<ParseTree, String> {
             _ => stack.push(Production::Tok(tok.clone())),
         }
     }
-    println!("len: {}, stack = {:#?}", stack.len(), stack);
     if stack.len() == 1 {
         let top = stack[0].clone();
         match top {
@@ -298,6 +311,18 @@ fn reduce(
     Ok(acc)
 }
 
+fn param_to_string(param: &ParseTree) -> Result<&std::string::String, std::string::String>{
+    match param {
+        ParseTree::Branch(op, vec) => {
+            match op {
+                Op::Func(name) => Ok(name),
+                _ => Err(format!("error, expecting variable, got {:?}", op)),
+            }
+        }
+        _ => Err(String::from("error, expecting variable, got tree")),
+    }
+}
+
 fn eval(
     tree: &ParseTree,
     env: &HashTrieMap<String, StutterObject>,
@@ -313,12 +338,22 @@ fn eval(
                     reduce(op, &resolved?, &env)
                 }
                 Op::Func(name) => {
+                    println!("xs = {:?}", xs);
                     let func_body = env.get(name);
                     match func_body {
                         Some(body) => {
                             match body {
-                                StutterObject::Lambda(tree) => {
-                                    eval(&tree, &env)
+                                StutterObject::Lambda(params, expr) => {
+                                    println!("body = {:?}", body);
+                                    println!("params = {:?}", params);
+                                    println!("expr = {:?}", expr);
+                                    let mut new_env = env.clone();
+                                    for (param, arg) in params.iter().zip(xs) {
+                                        // TODO: multithread this
+                                        let resolved_arg = eval(&arg, &env)?;
+                                        new_env = new_env.clone().insert(param.to_string(), resolved_arg);
+                                    }
+                                    eval(&expr, &new_env)
                                 }
                                 _ => Ok(body.clone()),
                             }
@@ -329,6 +364,10 @@ fn eval(
                 Op::Let => {
                     let expr = &xs[xs.len() - 1];
                     let mut new_env = env.clone();
+                    if xs.len() < 2 {
+                        return Err(String::from(
+                            "expecting form of (let (VAR expr)...(expr))"));
+                    }
                     for branch in xs[..xs.len() - 1].iter() {
                         let (var, val) = match branch {
                             ParseTree::Branch(var_op, val_vec) => match var_op
@@ -340,19 +379,34 @@ fn eval(
                                             val_vec
                                         ))
                                     } else {
-                                        Ok((name,
-                                            eval(&val_vec[0], &new_env)?))
+                                        match &val_vec[0] {
+                                            ParseTree::Branch(tok, params_and_func) => {
+                                                match tok {
+                                                    Op::Func(f_name) => {
+                                                        if f_name == "lambda" {
+                                                            //let params = vec!([params_and_func[0]]);
+                                                            let mut params = Vec::new();
+                                                            let expr_index = params_and_func.len() - 1;
+                                                            for param in params_and_func[..expr_index].iter() {
+                                                                let param_str = param_to_string(&param)?;
+                                                                params.push(param_str.clone());
+                                                            }
+                                                            let func = &params_and_func[expr_index];
+                                                            Ok((name, StutterObject::Lambda(params, func.clone())))
+                                                        } else {
+                                                            Err(String::from(format!("syntax error 2: expecting lambda, got: {:?}", tok)))
+                                                        }
+                                                    }
+                                                    _ => Err(String::from(format!("syntax error 1: expecting lambda, got: {:?}", tok)))
+                                                }
+                                            }
+                                            _ => Ok((name, eval(&val_vec[0], &new_env)?))
+                                        }
                                     }
                                 }
-                                _ => {
-                                    Err(String::from("not a variable"))
-                                }
+                                _ => Err(String::from("not a variable"))
                             },
-                            _ => {
-                                Err(String::from(
-                                    "expecting variable assignment",
-                                ))
-                            }
+                            _ => Err(String::from("expecting variable assignment"))
                         }?;
                         new_env =
                             new_env.clone().insert(var.clone(), val.clone());
@@ -374,6 +428,7 @@ fn eval(
 fn run(cmd: &String) -> Result<StutterObject, String> {
     let tokens = lex(&cmd)?;
     let tree = parse(&tokens)?;
+    //println!("tree = {:#?}", tree);
     let env = HashTrieMap::new();
     let result = eval(&tree, &env)?;
     Ok(result)
@@ -397,6 +452,10 @@ fn main() {
             }
             Input::None => continue,
             Input::Quit => break,
+            Input::Err(e) => {
+                println!("lexical error: {}", e);
+                continue
+            }
         };
 
         // Loop
