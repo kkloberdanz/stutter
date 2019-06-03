@@ -342,8 +342,42 @@ fn get_params(params_as_tree: &ParseTree) -> Result<Vec<String>, String> {
     Ok(params)
 }
 
-fn handle_let(op: &Op, xs: &Vec<ParseTree>, env: &HashTrieMap<String, StutterObject>) -> Result<StutterObject, String> {
+fn eval_lambda_params(
+    name: &String,
+    val: &ParseTree,
+    env: &HashTrieMap<String, StutterObject>,
+) -> Result<(String, StutterObject), String> {
+    match &val {
+        ParseTree::Branch(tok, params_and_func) => match tok {
+            Op::Func(f_name) => {
+                if f_name == "lambda" {
+                    let params = get_params(&params_and_func[0])?;
+                    let func = &params_and_func[1];
+                    Ok((
+                        name.to_string(),
+                        StutterObject::Lambda(params, func.clone()),
+                    ))
+                } else {
+                    Err(String::from(format!(
+                        "syntax error 2: expecting lambda, got: {:?}",
+                        tok
+                    )))
+                }
+            }
+            _ => Err(String::from(format!(
+                "syntax error 1: expecting lambda, got: {:?}",
+                tok
+            ))),
+        },
+        _ => Ok((name.to_string(), eval(&val, &env)?)),
+    }
+}
 
+fn handle_let(
+    op: &Op,
+    xs: &Vec<ParseTree>,
+    env: &HashTrieMap<String, StutterObject>,
+) -> Result<StutterObject, String> {
     let expr = &xs[xs.len() - 1];
     let mut new_env = env.clone();
     if xs.len() < 2 {
@@ -353,39 +387,17 @@ fn handle_let(op: &Op, xs: &Vec<ParseTree>, env: &HashTrieMap<String, StutterObj
     }
     for branch in xs[..xs.len() - 1].iter() {
         let (var, val) = match branch {
-            ParseTree::Branch(var_op, val_vec) => match var_op
-            {
+            ParseTree::Branch(var_op, val_vec) => match var_op {
                 Op::Func(name) => {
                     if val_vec.len() != 1 {
-                        Err(format!(
-                            "syntax error: {:?}",
-                            val_vec
-                        ))
+                        Err(format!("syntax error: {:?}", val_vec))
                     } else {
-                        match &val_vec[0] {
-                            ParseTree::Branch(tok, params_and_func) => {
-                                match tok {
-                                    Op::Func(f_name) => {
-                                        if f_name == "lambda" {
-                                            let params = get_params(&params_and_func[0])?;
-                                            let func = &params_and_func[1];
-                                            Ok((name, StutterObject::Lambda(params, func.clone())))
-                                        } else {
-                                            Err(String::from(format!("syntax error 2: expecting lambda, got: {:?}", tok)))
-                                        }
-                                    }
-                                    _ => Err(String::from(format!("syntax error 1: expecting lambda, got: {:?}", tok)))
-                                }
-                            }
-                            _ => Ok((name, eval(&val_vec[0], &new_env)?))
-                        }
+                        eval_lambda_params(&name, &val_vec[0], &env)
                     }
                 }
                 _ => Err(String::from("not a variable")),
             },
-            _ => Err(String::from(
-                "expecting variable assignment",
-            )),
+            _ => Err(String::from("expecting variable assignment")),
         }?;
         new_env = new_env.clone().insert(var.clone(), val.clone());
     }
@@ -429,7 +441,7 @@ fn eval(
                         None => Err(format!("func: {} not in scope", name)),
                     }
                 }
-                Op::Let => handle_let(&op, &xs, &env)
+                Op::Let => handle_let(&op, &xs, &env),
             }
         }
         ParseTree::Leaf(tok) => {
