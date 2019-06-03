@@ -313,14 +313,33 @@ fn reduce(
 
 fn param_to_string(param: &ParseTree) -> Result<&std::string::String, std::string::String>{
     match param {
-        ParseTree::Branch(op, vec) => {
-            match op {
-                Op::Func(name) => Ok(name),
-                _ => Err(format!("error, expecting variable, got {:?}", op)),
+        ParseTree::Leaf(tok) => {
+            match tok {
+                Token::Id(name) => Ok(name),
+                _ => Err(format!("error, expecting variable, got {:?}", tok)),
             }
         }
         _ => Err(String::from("error, expecting variable, got tree")),
     }
+}
+
+fn get_params(params_as_tree: &ParseTree) -> Result<Vec<String>, String> {
+    let mut params: Vec<String> = Vec::new();
+    match params_as_tree {
+        ParseTree::Branch(op, xs) => {
+            let param = match op {
+                Op::Func(name) => Ok(name.to_string()),
+                _ => Err(String::from("expecting param name")),
+            }?;
+            params.push(param);
+            for param in xs.iter() {
+                let resolved_param = param_to_string(&param)?;
+                params.push(resolved_param.to_string());
+            }
+        }
+        _ => return Err(String::from("syntax error, expecting params"))
+    }
+    Ok(params)
 }
 
 fn eval(
@@ -338,15 +357,11 @@ fn eval(
                     reduce(op, &resolved?, &env)
                 }
                 Op::Func(name) => {
-                    println!("xs = {:?}", xs);
                     let func_body = env.get(name);
                     match func_body {
                         Some(body) => {
                             match body {
                                 StutterObject::Lambda(params, expr) => {
-                                    println!("body = {:?}", body);
-                                    println!("params = {:?}", params);
-                                    println!("expr = {:?}", expr);
                                     let mut new_env = env.clone();
                                     for (param, arg) in params.iter().zip(xs) {
                                         // TODO: multithread this
@@ -384,14 +399,8 @@ fn eval(
                                                 match tok {
                                                     Op::Func(f_name) => {
                                                         if f_name == "lambda" {
-                                                            //let params = vec!([params_and_func[0]]);
-                                                            let mut params = Vec::new();
-                                                            let expr_index = params_and_func.len() - 1;
-                                                            for param in params_and_func[..expr_index].iter() {
-                                                                let param_str = param_to_string(&param)?;
-                                                                params.push(param_str.clone());
-                                                            }
-                                                            let func = &params_and_func[expr_index];
+                                                            let params = get_params(&params_and_func[0])?;
+                                                            let func = &params_and_func[1];
                                                             Ok((name, StutterObject::Lambda(params, func.clone())))
                                                         } else {
                                                             Err(String::from(format!("syntax error 2: expecting lambda, got: {:?}", tok)))
@@ -428,7 +437,6 @@ fn eval(
 fn run(cmd: &String) -> Result<StutterObject, String> {
     let tokens = lex(&cmd)?;
     let tree = parse(&tokens)?;
-    //println!("tree = {:#?}", tree);
     let env = HashTrieMap::new();
     let result = eval(&tree, &env)?;
     Ok(result)
