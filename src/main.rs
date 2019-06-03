@@ -311,14 +311,14 @@ fn reduce(
     Ok(acc)
 }
 
-fn param_to_string(param: &ParseTree) -> Result<&std::string::String, std::string::String>{
+fn param_to_string(
+    param: &ParseTree,
+) -> Result<&std::string::String, std::string::String> {
     match param {
-        ParseTree::Leaf(tok) => {
-            match tok {
-                Token::Id(name) => Ok(name),
-                _ => Err(format!("error, expecting variable, got {:?}", tok)),
-            }
-        }
+        ParseTree::Leaf(tok) => match tok {
+            Token::Id(name) => Ok(name),
+            _ => Err(format!("error, expecting variable, got {:?}", tok)),
+        },
         _ => Err(String::from("error, expecting variable, got tree")),
     }
 }
@@ -337,7 +337,7 @@ fn get_params(params_as_tree: &ParseTree) -> Result<Vec<String>, String> {
                 params.push(resolved_param.to_string());
             }
         }
-        _ => return Err(String::from("syntax error, expecting params"))
+        _ => return Err(String::from("syntax error, expecting params")),
     }
     Ok(params)
 }
@@ -366,7 +366,10 @@ fn eval(
                                     for (param, arg) in params.iter().zip(xs) {
                                         // TODO: multithread this
                                         let resolved_arg = eval(&arg, &env)?;
-                                        new_env = new_env.clone().insert(param.to_string(), resolved_arg);
+                                        new_env = new_env.clone().insert(
+                                            param.to_string(),
+                                            resolved_arg,
+                                        );
                                     }
                                     eval(&expr, &new_env)
                                 }
@@ -381,7 +384,8 @@ fn eval(
                     let mut new_env = env.clone();
                     if xs.len() < 2 {
                         return Err(String::from(
-                            "expecting form of (let (VAR expr)...(expr))"));
+                            "expecting form of (let (VAR expr)...(expr))",
+                        ));
                     }
                     for branch in xs[..xs.len() - 1].iter() {
                         let (var, val) = match branch {
@@ -413,9 +417,11 @@ fn eval(
                                         }
                                     }
                                 }
-                                _ => Err(String::from("not a variable"))
+                                _ => Err(String::from("not a variable")),
                             },
-                            _ => Err(String::from("expecting variable assignment"))
+                            _ => Err(String::from(
+                                "expecting variable assignment",
+                            )),
                         }?;
                         new_env =
                             new_env.clone().insert(var.clone(), val.clone());
@@ -462,7 +468,7 @@ fn main() {
             Input::Quit => break,
             Input::Err(e) => {
                 println!("lexical error: {}", e);
-                continue
+                continue;
             }
         };
 
