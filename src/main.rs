@@ -38,6 +38,7 @@ enum Token {
     List,
     Index,
     Drop,
+    Len,
     Take,
     Num(i64),
     Dec(f64),
@@ -54,6 +55,7 @@ enum Op {
     List,
     Index,
     Drop,
+    Len,
     Take,
     Func(String),
 }
@@ -126,6 +128,7 @@ fn to_token(s: &String) -> Token {
             "take" => Token::Take,
             "index" => Token::Index,
             "drop" => Token::Drop,
+            "len" => Token::Len,
             _ => Token::Id(s.to_string()),
         }
     }
@@ -151,6 +154,7 @@ fn token_to_op(tok: &Token) -> Result<Op, String> {
         Token::Index => Ok(Op::Index),
         Token::Take => Ok(Op::Take),
         Token::Drop => Ok(Op::Drop),
+        Token::Len => Ok(Op::Len),
         Token::Id(s) => Ok(Op::Func(s.to_string())),
         _ => Err(format!("invalid op: {:?}", tok)),
     }
@@ -489,7 +493,7 @@ fn eval(
                         }
                         _ => Err(String::from(
                             "type error: \
-                             index expects form (index NUM LIST)"))
+                             expected form (index NUM LIST)"))
                     }
                 }
                 Op::Take => {
@@ -503,7 +507,7 @@ fn eval(
                         }
                         _ => Err(String::from(
                             "type error: \
-                             index expects form (index NUM LIST)"))
+                             expected form (take NUM LIST)"))
                     }
                 }
                 Op::Drop => {
@@ -517,7 +521,20 @@ fn eval(
                         }
                         _ => Err(String::from(
                             "type error: \
-                             index expects form (index NUM LIST)"))
+                             expected form (drop NUM LIST)"))
+                    }
+                }
+                Op::Len => {
+                    let v = resolved?;
+                    let list = &v[0];
+                    match list {
+                        StutterObject::List(l) =>  {
+                            let len: i64 = l.len() as i64;
+                            Ok(StutterObject::Num(len))
+                        }
+                        _ => Err(String::from(
+                            "type error: \
+                             expected form (len LIST)"))
                     }
                 }
             }
