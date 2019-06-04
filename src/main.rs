@@ -37,6 +37,8 @@ enum Token {
     Let,
     List,
     Index,
+    Drop,
+    Take,
     Num(i64),
     Dec(f64),
     Id(String),
@@ -51,6 +53,8 @@ enum Op {
     Let,
     List,
     Index,
+    Drop,
+    Take,
     Func(String),
 }
 
@@ -119,7 +123,9 @@ fn to_token(s: &String) -> Token {
             "/" => Token::Slash,
             "let" => Token::Let,
             "list" => Token::List,
+            "take" => Token::Take,
             "index" => Token::Index,
+            "drop" => Token::Drop,
             _ => Token::Id(s.to_string()),
         }
     }
@@ -143,6 +149,8 @@ fn token_to_op(tok: &Token) -> Result<Op, String> {
         Token::Let => Ok(Op::Let),
         Token::List => Ok(Op::List),
         Token::Index => Ok(Op::Index),
+        Token::Take => Ok(Op::Take),
+        Token::Drop => Ok(Op::Drop),
         Token::Id(s) => Ok(Op::Func(s.to_string())),
         _ => Err(format!("invalid op: {:?}", tok)),
     }
@@ -480,7 +488,35 @@ fn eval(
                             Ok(l[size].clone())
                         }
                         _ => Err(String::from(
-                            "syntax error: \
+                            "type error: \
+                             index expects form (index NUM LIST)"))
+                    }
+                }
+                Op::Take => {
+                    let v = resolved?;
+                    let i = &v[0];
+                    let list = &v[1];
+                    match (i, list) {
+                        (StutterObject::Num(n), StutterObject::List(l)) =>  {
+                            let size: usize = *n as usize;
+                            Ok(StutterObject::List(l[..size].to_vec()))
+                        }
+                        _ => Err(String::from(
+                            "type error: \
+                             index expects form (index NUM LIST)"))
+                    }
+                }
+                Op::Drop => {
+                    let v = resolved?;
+                    let i = &v[0];
+                    let list = &v[1];
+                    match (i, list) {
+                        (StutterObject::Num(n), StutterObject::List(l)) =>  {
+                            let size: usize = *n as usize;
+                            Ok(StutterObject::List(l[size..].to_vec()))
+                        }
+                        _ => Err(String::from(
+                            "type error: \
                              index expects form (index NUM LIST)"))
                     }
                 }
