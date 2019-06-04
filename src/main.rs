@@ -471,8 +471,18 @@ fn eval(
                     Ok(StutterObject::List(v))
                 }
                 Op::Index => {
-                    //= xs[0];
-                    Ok(StutterObject::Num(42))
+                    let v = resolved?;
+                    let i = &v[0];
+                    let list = &v[1];
+                    match (i, list) {
+                        (StutterObject::Num(n), StutterObject::List(l)) =>  {
+                            let size: usize = *n as usize;
+                            Ok(l[size].clone())
+                        }
+                        _ => Err(String::from(
+                            "syntax error: \
+                             index expects form (index NUM LIST)"))
+                    }
                 }
             }
         }
