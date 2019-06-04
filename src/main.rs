@@ -36,6 +36,7 @@ enum Token {
     Slash,
     Let,
     List,
+    Index,
     Num(i64),
     Dec(f64),
     Id(String),
@@ -49,6 +50,7 @@ enum Op {
     Div,
     Let,
     List,
+    Index,
     Func(String),
 }
 
@@ -117,6 +119,7 @@ fn to_token(s: &String) -> Token {
             "/" => Token::Slash,
             "let" => Token::Let,
             "list" => Token::List,
+            "index" => Token::Index,
             _ => Token::Id(s.to_string()),
         }
     }
@@ -139,6 +142,7 @@ fn token_to_op(tok: &Token) -> Result<Op, String> {
         Token::Slash => Ok(Op::Div),
         Token::Let => Ok(Op::Let),
         Token::List => Ok(Op::List),
+        Token::Index => Ok(Op::Index),
         Token::Id(s) => Ok(Op::Func(s.to_string())),
         _ => Err(format!("invalid op: {:?}", tok)),
     }
@@ -463,11 +467,12 @@ fn eval(
                 }
                 Op::Let => handle_let(&op, &xs, &env),
                 Op::List => {
-                    let v = xs
-                        .par_iter()
-                        .map(|expr| eval(&expr, &env).unwrap())
-                        .collect();
+                    let v = resolved?;
                     Ok(StutterObject::List(v))
+                }
+                Op::Index => {
+                    //= xs[0];
+                    Ok(StutterObject::Num(42))
                 }
             }
         }
