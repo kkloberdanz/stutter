@@ -67,6 +67,7 @@ enum StutterObject {
     Id(String),
     Lambda(Vec<String>, ParseTree),
     List(Vec<StutterObject>),
+    Nil,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -461,6 +462,7 @@ fn eval(
                             match body {
                                 StutterObject::Lambda(params, expr) => {
                                     let mut new_env = env.clone();
+                                    // TODO: use resolved instead of xs
                                     for (param, arg) in params.iter().zip(xs) {
                                         // TODO: multithread this
                                         let resolved_arg = eval(&arg, &env)?;
@@ -477,6 +479,7 @@ fn eval(
                         None => Err(format!("func: {} not in scope", name)),
                     }
                 }
+                // TODO: use resolved instead of xs here
                 Op::Let => handle_let(&op, &xs, &env),
                 Op::List => {
                     let v = resolved?;
@@ -551,10 +554,14 @@ fn eval(
 
 fn run(cmd: &String) -> Result<StutterObject, String> {
     let tokens = lex(&cmd)?;
-    let tree = parse(&tokens)?;
-    let env = HashTrieMap::new();
-    let result = eval(&tree, &env)?;
-    Ok(result)
+    if (tokens.len() == 0) {
+        Ok(StutterObject::Nil)
+    } else {
+        let tree = parse(&tokens)?;
+        let env = HashTrieMap::new();
+        let result = eval(&tree, &env)?;
+        Ok(result)
+    }
 }
 
 fn main() {
