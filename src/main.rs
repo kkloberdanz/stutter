@@ -96,18 +96,23 @@ fn prompt_user(prompt: &String) -> Input {
     print!("{}", prompt);
     io::stdout().flush().ok().expect("Could not flush stdout");
     let mut user_input = String::new();
-    io::stdin()
-        .read_line(&mut user_input)
-        .expect("failed to read stdin");
-    let as_string = user_input.trim().to_string();
-    if count_chars(&as_string, '(') != count_chars(&as_string, ')') {
-        return Input::Err(String::from("unmatched parens"));
+    loop {
+        let mut line = String::new();
+        io::stdin()
+            .read_line(&mut line)
+            .expect("failed to read stdin");
+        let as_string = &line.trim().to_string();
+        let new_input = format!(" {} ", as_string);
+        user_input += &new_input;
+        if count_chars(&user_input, '(') == count_chars(&user_input, ')') {
+            break;
+        }
     }
 
-    match as_string.as_ref() {
+    match user_input.as_ref() {
         "q" => Input::Quit,
         "" => Input::None,
-        _ => Input::Command(as_string),
+        _ => Input::Command(user_input),
     }
 }
 
@@ -538,9 +543,7 @@ fn eval_branch(
                     let len: i64 = l.len() as i64;
                     Ok(StutterObject::Num(len))
                 }
-                _ => Err(String::from(
-                    "type error: expected form (len LIST)",
-                )),
+                _ => Err(String::from("type error: expected form (len LIST)")),
             }
         }
     }
