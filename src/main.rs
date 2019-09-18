@@ -396,7 +396,7 @@ fn eval_lambda_params(
     }
 }
 
-fn handle_let(
+fn eval_let(
     xs: &Vec<ParseTree>,
     env: &HashTrieMap<String, StutterObject>,
 ) -> Result<StutterObject, String> {
@@ -440,7 +440,7 @@ fn handle_let(
     eval(&expr, &new_env)
 }
 
-fn handle_func(
+fn eval_func(
     name: &String,
     xs: &Vec<ParseTree>,
     env: &HashTrieMap<String, StutterObject>,
@@ -469,86 +469,91 @@ fn handle_func(
     }
 }
 
+fn eval_branch(
+    op: &Op,
+    xs: &Vec<ParseTree>,
+    env: &HashTrieMap<String, StutterObject>,
+) -> Result<StutterObject, String> {
+    let v = xs.to_vec();
+    let resolved: Result<Vec<StutterObject>, String> =
+        v.par_iter().map(|expr| eval(&expr, &env)).collect();
+
+    match op {
+        Op::Add | Op::Sub | Op::Mul | Op::Div => {
+            reduce(op, &resolved?, &env)
+        }
+
+        Op::Func(name) => eval_func(&name, &xs, &env),
+
+        // TODO: use resolved instead of xs here
+        Op::Let => eval_let(&xs, &env),
+        Op::List => {
+            let v = resolved?;
+            Ok(StutterObject::List(v))
+        }
+        Op::Index => {
+            let v = resolved?;
+            let i = &v[0];
+            let list = &v[1];
+            match (i, list) {
+                (StutterObject::Num(n), StutterObject::List(l)) =>  {
+                    let size: usize = *n as usize;
+                    Ok(l[size].clone())
+                }
+                _ => Err(String::from(
+                    "type error: expected form (index NUM LIST)"))
+            }
+        }
+        Op::Take => {
+            let v = resolved?;
+            let i = &v[0];
+            let list = &v[1];
+            match (i, list) {
+                (StutterObject::Num(n), StutterObject::List(l)) =>  {
+                    let size: usize = *n as usize;
+                    Ok(StutterObject::List(l[..size].to_vec()))
+                }
+                _ => Err(String::from(
+                    "type error: \
+                     expected form (take NUM LIST)"))
+            }
+        }
+        Op::Drop => {
+            let v = resolved?;
+            let i = &v[0];
+            let list = &v[1];
+            match (i, list) {
+                (StutterObject::Num(n), StutterObject::List(l)) =>  {
+                    let size: usize = *n as usize;
+                    Ok(StutterObject::List(l[size..].to_vec()))
+                }
+                _ => Err(String::from(
+                    "type error: \
+                     expected form (drop NUM LIST)"))
+            }
+        }
+        Op::Len => {
+            let v = resolved?;
+            let list = &v[0];
+            match list {
+                StutterObject::List(l) =>  {
+                    let len: i64 = l.len() as i64;
+                    Ok(StutterObject::Num(len))
+                }
+                _ => Err(String::from(
+                    "type error: \
+                     expected form (len LIST)"))
+            }
+        }
+    }
+}
+
 fn eval(
     tree: &ParseTree,
     env: &HashTrieMap<String, StutterObject>,
 ) -> Result<StutterObject, String> {
     match tree {
-        ParseTree::Branch(op, xs) => {
-            let v = xs.to_vec();
-            let resolved: Result<Vec<StutterObject>, String> =
-                v.par_iter().map(|expr| eval(&expr, &env)).collect();
-
-            match op {
-                Op::Add | Op::Sub | Op::Mul | Op::Div => {
-                    reduce(op, &resolved?, &env)
-                }
-
-                Op::Func(name) => handle_func(&name, &xs, &env),
-
-                // TODO: use resolved instead of xs here
-                Op::Let => handle_let(&xs, &env),
-                Op::List => {
-                    let v = resolved?;
-                    Ok(StutterObject::List(v))
-                }
-                Op::Index => {
-                    let v = resolved?;
-                    let i = &v[0];
-                    let list = &v[1];
-                    match (i, list) {
-                        (StutterObject::Num(n), StutterObject::List(l)) =>  {
-                            let size: usize = *n as usize;
-                            Ok(l[size].clone())
-                        }
-                        _ => Err(String::from(
-                            "type error: \
-                             expected form (index NUM LIST)"))
-                    }
-                }
-                Op::Take => {
-                    let v = resolved?;
-                    let i = &v[0];
-                    let list = &v[1];
-                    match (i, list) {
-                        (StutterObject::Num(n), StutterObject::List(l)) =>  {
-                            let size: usize = *n as usize;
-                            Ok(StutterObject::List(l[..size].to_vec()))
-                        }
-                        _ => Err(String::from(
-                            "type error: \
-                             expected form (take NUM LIST)"))
-                    }
-                }
-                Op::Drop => {
-                    let v = resolved?;
-                    let i = &v[0];
-                    let list = &v[1];
-                    match (i, list) {
-                        (StutterObject::Num(n), StutterObject::List(l)) =>  {
-                            let size: usize = *n as usize;
-                            Ok(StutterObject::List(l[size..].to_vec()))
-                        }
-                        _ => Err(String::from(
-                            "type error: \
-                             expected form (drop NUM LIST)"))
-                    }
-                }
-                Op::Len => {
-                    let v = resolved?;
-                    let list = &v[0];
-                    match list {
-                        StutterObject::List(l) =>  {
-                            let len: i64 = l.len() as i64;
-                            Ok(StutterObject::Num(len))
-                        }
-                        _ => Err(String::from(
-                            "type error: \
-                             expected form (len LIST)"))
-                    }
-                }
-            }
-        }
+        ParseTree::Branch(op, xs) => eval_branch(&op, &xs, &env),
         ParseTree::Leaf(tok) => {
             let obj = token_to_stutterobject(&tok)?;
             match obj {
