@@ -397,7 +397,6 @@ fn eval_lambda_params(
 }
 
 fn handle_let(
-    op: &Op,
     xs: &Vec<ParseTree>,
     env: &HashTrieMap<String, StutterObject>,
 ) -> Result<StutterObject, String> {
@@ -441,6 +440,35 @@ fn handle_let(
     eval(&expr, &new_env)
 }
 
+fn handle_func(
+    name: &String,
+    xs: &Vec<ParseTree>,
+    env: &HashTrieMap<String, StutterObject>,
+) -> Result<StutterObject, String> {
+    let func_body = env.get(name);
+    match func_body {
+        Some(body) => {
+            match body {
+                StutterObject::Lambda(params, expr) => {
+                    let mut new_env = env.clone();
+                    // TODO: use resolved instead of xs
+                    for (param, arg) in params.iter().zip(xs) {
+                        // TODO: multithread this
+                        let resolved_arg = eval(&arg, &env)?;
+                        new_env = new_env.clone().insert(
+                            param.to_string(),
+                            resolved_arg,
+                        );
+                    }
+                    eval(&expr, &new_env)
+                }
+                _ => Ok(body.clone()),
+            }
+        }
+        None => Err(format!("func: {} not in scope", name)),
+    }
+}
+
 fn eval(
     tree: &ParseTree,
     env: &HashTrieMap<String, StutterObject>,
@@ -455,32 +483,11 @@ fn eval(
                 Op::Add | Op::Sub | Op::Mul | Op::Div => {
                     reduce(op, &resolved?, &env)
                 }
-                Op::Func(name) => {
-                    let func_body = env.get(name);
-                    match func_body {
-                        Some(body) => {
-                            match body {
-                                StutterObject::Lambda(params, expr) => {
-                                    let mut new_env = env.clone();
-                                    // TODO: use resolved instead of xs
-                                    for (param, arg) in params.iter().zip(xs) {
-                                        // TODO: multithread this
-                                        let resolved_arg = eval(&arg, &env)?;
-                                        new_env = new_env.clone().insert(
-                                            param.to_string(),
-                                            resolved_arg,
-                                        );
-                                    }
-                                    eval(&expr, &new_env)
-                                }
-                                _ => Ok(body.clone()),
-                            }
-                        }
-                        None => Err(format!("func: {} not in scope", name)),
-                    }
-                }
+
+                Op::Func(name) => handle_func(&name, &xs, &env),
+
                 // TODO: use resolved instead of xs here
-                Op::Let => handle_let(&op, &xs, &env),
+                Op::Let => handle_let(&xs, &env),
                 Op::List => {
                     let v = resolved?;
                     Ok(StutterObject::List(v))
@@ -554,7 +561,7 @@ fn eval(
 
 fn run(cmd: &String) -> Result<StutterObject, String> {
     let tokens = lex(&cmd)?;
-    if (tokens.len() == 0) {
+    if tokens.len() == 0 {
         Ok(StutterObject::Nil)
     } else {
         let tree = parse(&tokens)?;
