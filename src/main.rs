@@ -455,10 +455,9 @@ fn eval_func(
                     for (param, arg) in params.iter().zip(xs) {
                         // TODO: multithread this
                         let resolved_arg = eval(&arg, &env)?;
-                        new_env = new_env.clone().insert(
-                            param.to_string(),
-                            resolved_arg,
-                        );
+                        new_env = new_env
+                            .clone()
+                            .insert(param.to_string(), resolved_arg);
                     }
                     eval(&expr, &new_env)
                 }
@@ -479,9 +478,7 @@ fn eval_branch(
         v.par_iter().map(|expr| eval(&expr, &env)).collect();
 
     match op {
-        Op::Add | Op::Sub | Op::Mul | Op::Div => {
-            reduce(op, &resolved?, &env)
-        }
+        Op::Add | Op::Sub | Op::Mul | Op::Div => reduce(op, &resolved?, &env),
 
         Op::Func(name) => eval_func(&name, &xs, &env),
 
@@ -496,12 +493,13 @@ fn eval_branch(
             let i = &v[0];
             let list = &v[1];
             match (i, list) {
-                (StutterObject::Num(n), StutterObject::List(l)) =>  {
+                (StutterObject::Num(n), StutterObject::List(l)) => {
                     let size: usize = *n as usize;
                     Ok(l[size].clone())
                 }
                 _ => Err(String::from(
-                    "type error: expected form (index NUM LIST)"))
+                    "type error: expected form (index NUM LIST)",
+                )),
             }
         }
         Op::Take => {
@@ -509,13 +507,13 @@ fn eval_branch(
             let i = &v[0];
             let list = &v[1];
             match (i, list) {
-                (StutterObject::Num(n), StutterObject::List(l)) =>  {
+                (StutterObject::Num(n), StutterObject::List(l)) => {
                     let size: usize = *n as usize;
                     Ok(StutterObject::List(l[..size].to_vec()))
                 }
                 _ => Err(String::from(
-                    "type error: \
-                     expected form (take NUM LIST)"))
+                    "type error: expected form (take NUM LIST)",
+                )),
             }
         }
         Op::Drop => {
@@ -523,26 +521,26 @@ fn eval_branch(
             let i = &v[0];
             let list = &v[1];
             match (i, list) {
-                (StutterObject::Num(n), StutterObject::List(l)) =>  {
+                (StutterObject::Num(n), StutterObject::List(l)) => {
                     let size: usize = *n as usize;
                     Ok(StutterObject::List(l[size..].to_vec()))
                 }
                 _ => Err(String::from(
-                    "type error: \
-                     expected form (drop NUM LIST)"))
+                    "type error: expected form (drop NUM LIST)",
+                )),
             }
         }
         Op::Len => {
             let v = resolved?;
             let list = &v[0];
             match list {
-                StutterObject::List(l) =>  {
+                StutterObject::List(l) => {
                     let len: i64 = l.len() as i64;
                     Ok(StutterObject::Num(len))
                 }
                 _ => Err(String::from(
-                    "type error: \
-                     expected form (len LIST)"))
+                    "type error: expected form (len LIST)",
+                )),
             }
         }
     }
