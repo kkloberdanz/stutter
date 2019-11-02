@@ -297,12 +297,10 @@ fn lookup_env(
     global_env: &mut HashMap<String, StutterObject>,
 ) -> Result<StutterObject, String> {
     match obj {
-        StutterObject::Id(variable_name) => {
-            match env.get(variable_name) {
-                Some(value) => Ok(value.clone()),
-                None => lookup_global_env(&variable_name, global_env),
-            }
-        }
+        StutterObject::Id(variable_name) => match env.get(variable_name) {
+            Some(value) => Ok(value.clone()),
+            None => lookup_global_env(&variable_name, global_env),
+        },
         _ => Ok(obj.clone()),
     }
 }
