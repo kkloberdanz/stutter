@@ -622,7 +622,7 @@ fn eval_branch(
                     Ok(StutterObject::List(vec))
                 }
                 _ => Err(String::from(
-                    "type error: expected form (append NUM LIST)",
+                    "type error: expected form (append ITEM LIST)",
                 )),
             }
         }
