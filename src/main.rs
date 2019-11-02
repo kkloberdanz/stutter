@@ -13,9 +13,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Stutter.  If not, see <https://www.gnu.org/licenses/>.
 
-use rayon::prelude::*;
 use rpds::HashTrieMap;
-use rpds::Vector;
 use std::collections::HashMap;
 use std::io;
 use std::io::Write;
@@ -23,7 +21,6 @@ use std::io::Write;
 enum Input {
     Quit,
     None,
-    Err(String),
     Command(String),
 }
 
@@ -509,7 +506,7 @@ fn unpack_string_from_leaf(tree: &ParseTree) -> Result<String, String> {
             Token::Id(s) => Ok(s.to_string()),
             _ => Err(String::from("expecting function name")),
         },
-        ParseTree::Branch(op, v) => {
+        ParseTree::Branch(_op, _v) => {
             Err(String::from("expecting function name, got branch"))
         }
     }
@@ -665,10 +662,6 @@ fn main() {
             }
             Input::None => continue,
             Input::Quit => break,
-            Input::Err(e) => {
-                println!("lexical error: {}", e);
-                continue;
-            }
         };
 
         // Loop
