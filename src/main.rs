@@ -32,6 +32,7 @@ enum Token {
     Minus,
     Times,
     Slash,
+    Percent,
     Gt,
     Lt,
     Eq,
@@ -59,6 +60,7 @@ enum Op {
     Sub,
     Mul,
     Div,
+    Mod,
     Gt,
     Lt,
     Eq,
@@ -148,6 +150,7 @@ fn to_token(s: &String) -> Token {
             "-" => Token::Minus,
             "*" => Token::Times,
             "/" => Token::Slash,
+            "%" => Token::Percent,
             "<" => Token::Lt,
             ">" => Token::Gt,
             "=" => Token::Eq,
@@ -184,6 +187,7 @@ fn token_to_op(tok: &Token) -> Result<Op, String> {
         Token::Minus => Ok(Op::Sub),
         Token::Times => Ok(Op::Mul),
         Token::Slash => Ok(Op::Div),
+        Token::Percent => Ok(Op::Mod),
         Token::Gt => Ok(Op::Gt),
         Token::Lt => Ok(Op::Lt),
         Token::Eq => Ok(Op::Eq),
@@ -370,6 +374,7 @@ fn apply_op(
             Op::Add => Ok(StutterObject::Num(n1 + n2)),
             Op::Sub => Ok(StutterObject::Num(n1 - n2)),
             Op::Div => Ok(StutterObject::Num(n1 / n2)),
+            Op::Mod => Ok(StutterObject::Num(n1 % n2)),
             Op::Mul => Ok(StutterObject::Num(n1 * n2)),
             Op::Gt => Ok(StutterObject::Bool(n1 > n2)),
             Op::Lt => Ok(StutterObject::Bool(n1 < n2)),
@@ -382,6 +387,7 @@ fn apply_op(
             Op::Add => Ok(StutterObject::Dec(f1 + f2)),
             Op::Sub => Ok(StutterObject::Dec(f1 - f2)),
             Op::Div => Ok(StutterObject::Dec(f1 / f2)),
+            Op::Mod => Ok(StutterObject::Dec(f1 % f2)),
             Op::Mul => Ok(StutterObject::Dec(f1 * f2)),
             Op::Gt => Ok(StutterObject::Bool(f1 > f2)),
             Op::Lt => Ok(StutterObject::Bool(f1 < f2)),
@@ -601,6 +607,7 @@ fn eval_branch(
         | Op::Sub
         | Op::Mul
         | Op::Div
+        | Op::Mod
         | Op::Eq
         | Op::Gt
         | Op::Lt
