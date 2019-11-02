@@ -45,6 +45,7 @@ enum Token {
     Append,
     Len,
     Take,
+    If,
     Num(i64),
     Dec(f64),
     Bool(bool),
@@ -70,6 +71,7 @@ enum Op {
     Append,
     Len,
     Take,
+    If,
     Func(String),
 }
 
@@ -154,6 +156,7 @@ fn to_token(s: &String) -> Token {
             "def" => Token::Def,
             "list" => Token::List,
             "take" => Token::Take,
+            "if" => Token::If,
             "index" => Token::Index,
             "drop" => Token::Drop,
             "append" => Token::Append,
@@ -189,6 +192,7 @@ fn token_to_op(tok: &Token) -> Result<Op, String> {
         Token::List => Ok(Op::List),
         Token::Index => Ok(Op::Index),
         Token::Take => Ok(Op::Take),
+        Token::If => Ok(Op::If),
         Token::Drop => Ok(Op::Drop),
         Token::Append => Ok(Op::Append),
         Token::Len => Ok(Op::Len),
@@ -572,18 +576,23 @@ fn eval_def(
     Ok((name, value))
 }
 
+fn resolve_exprs(
+    xs: &Vec<ParseTree>,
+    env: &HashTrieMap<String, StutterObject>,
+    global_env: &mut HashMap<String, StutterObject>,
+) -> Result<Vec<StutterObject>, String> {
+    xs.to_vec()
+        .iter()
+        .map(|expr| eval(&expr, &env, global_env, true))
+        .collect()
+}
+
 fn eval_branch(
     op: &Op,
     xs: &Vec<ParseTree>,
     env: &HashTrieMap<String, StutterObject>,
     global_env: &mut HashMap<String, StutterObject>,
 ) -> Result<StutterObject, String> {
-    let v = xs.to_vec();
-    let resolved: Result<Vec<StutterObject>, String> = v
-        .iter()
-        .map(|expr| eval(&expr, &env, global_env, true))
-        .collect();
-
     match op {
         Op::Add
         | Op::Sub
@@ -593,11 +602,15 @@ fn eval_branch(
         | Op::Gt
         | Op::Lt
         | Op::Gte
-        | Op::Lte => reduce(op, &resolved?, &env, global_env),
+        | Op::Lte => reduce(
+            op,
+            &resolve_exprs(&xs, &env, global_env)?,
+            &env,
+            global_env,
+        ),
 
         Op::Func(name) => eval_func(&name, &xs, &env, global_env),
 
-        // TODO: use resolved instead of xs here
         Op::Let => eval_let(&xs, &env, global_env),
 
         Op::Def => {
@@ -607,11 +620,11 @@ fn eval_branch(
         }
 
         Op::List => {
-            let v = resolved?;
+            let v = resolve_exprs(&xs, &env, global_env)?;
             Ok(StutterObject::List(v))
         }
         Op::Index => {
-            let v = resolved?;
+            let v = resolve_exprs(&xs, &env, global_env)?;
             let i = &v[0];
             let list = &v[1];
             match (i, list) {
@@ -625,7 +638,7 @@ fn eval_branch(
             }
         }
         Op::Take => {
-            let v = resolved?;
+            let v = resolve_exprs(&xs, &env, global_env)?;
             let i = &v[0];
             let list = &v[1];
             match (i, list) {
@@ -639,7 +652,7 @@ fn eval_branch(
             }
         }
         Op::Drop => {
-            let v = resolved?;
+            let v = resolve_exprs(&xs, &env, global_env)?;
             let i = &v[0];
             let list = &v[1];
             match (i, list) {
@@ -653,7 +666,7 @@ fn eval_branch(
             }
         }
         Op::Append => {
-            let v = resolved?;
+            let v = resolve_exprs(&xs, &env, global_env)?;
             let i = &v[0];
             let list = &v[1];
             match list {
@@ -668,7 +681,7 @@ fn eval_branch(
             }
         }
         Op::Len => {
-            let v = resolved?;
+            let v = resolve_exprs(&xs, &env, global_env)?;
             let list = &v[0];
             match list {
                 StutterObject::List(l) => {
@@ -676,6 +689,28 @@ fn eval_branch(
                     Ok(StutterObject::Num(len))
                 }
                 _ => Err(String::from("type error: expected form (len LIST)")),
+            }
+        }
+        Op::If => {
+            let exprs = xs.to_vec();
+            if exprs.len() != 3 {
+                Err(String::from(
+                    "expecting form of (if (CONDITION) (EXPR) (EXPR))",
+                ))
+            } else {
+                let condition = eval(&exprs[0], &env, global_env, true)?;
+                let true_path = &exprs[1];
+                let false_path = &exprs[2];
+                let path = match condition {
+                    StutterObject::Bool(true) => Ok(true_path),
+                    StutterObject::Bool(false) => Ok(false_path),
+                    _ => Err(format!(
+                        "expecting boolean expression, got {:?}",
+                        condition
+                    )),
+                }?;
+                let resolved = eval(&path, &env, global_env, true)?;
+                Ok(resolved)
             }
         }
     }
@@ -780,3 +815,4 @@ fn main() {
 
 // test = (+ 1 2 3 (- 4 5) (* (- 6 7) 8))
 // (def f (lambda (x y z) (+ x y z)))
+// (if (= 0 0) (+ 1 2) (- 3 4))
