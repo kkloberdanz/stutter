@@ -16,6 +16,7 @@
 use rayon::prelude::*;
 use rpds::HashTrieMap;
 use rpds::Vector;
+use std::collections::HashMap;
 use std::io;
 use std::io::Write;
 
@@ -35,6 +36,7 @@ enum Token {
     Times,
     Slash,
     Let,
+    Def,
     List,
     Index,
     Drop,
@@ -52,6 +54,7 @@ enum Op {
     Mul,
     Div,
     Let,
+    Def,
     List,
     Index,
     Drop,
@@ -62,12 +65,12 @@ enum Op {
 
 #[derive(Clone, Debug, PartialEq)]
 enum StutterObject {
+    Nil,
     Num(i64),
     Dec(f64),
     Id(String),
     Lambda(Vec<String>, ParseTree),
     List(Vec<StutterObject>),
-    Nil,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -130,6 +133,7 @@ fn to_token(s: &String) -> Token {
             "*" => Token::Times,
             "/" => Token::Slash,
             "let" => Token::Let,
+            "def" => Token::Def,
             "list" => Token::List,
             "take" => Token::Take,
             "index" => Token::Index,
@@ -156,6 +160,7 @@ fn token_to_op(tok: &Token) -> Result<Op, String> {
         Token::Times => Ok(Op::Mul),
         Token::Slash => Ok(Op::Div),
         Token::Let => Ok(Op::Let),
+        Token::Def => Ok(Op::Def),
         Token::List => Ok(Op::List),
         Token::Index => Ok(Op::Index),
         Token::Take => Ok(Op::Take),
@@ -279,15 +284,30 @@ fn parse(tokens: &Vec<Token>) -> Result<ParseTree, String> {
     }
 }
 
+fn lookup_global_env(
+    variable_name: &String,
+    global_env: &HashMap<String, StutterObject>,
+) -> Result<StutterObject, String> {
+    match global_env.get(variable_name) {
+        Some(value) => Ok(value.clone()),
+        None => Err(format!("{} not in scope", variable_name)),
+    }
+}
+
 fn lookup_env(
     obj: &StutterObject,
     env: &HashTrieMap<String, StutterObject>,
+    global_env: &HashMap<String, StutterObject>,
 ) -> Result<StutterObject, String> {
     match obj {
-        StutterObject::Id(variable_name) => match env.get(variable_name) {
-            Some(value) => Ok(value.clone()),
-            None => Err(format!("{} not in scope", variable_name)),
-        },
+        StutterObject::Id(variable_name) => {
+            println!("var: {:#?}", variable_name);
+            println!("env: {:#?}", global_env);
+            match env.get(variable_name) {
+                Some(value) => Ok(value.clone()),
+                None => lookup_global_env(&variable_name, &global_env),
+            }
+        }
         _ => Ok(obj.clone()),
     }
 }
@@ -297,9 +317,10 @@ fn apply_op(
     acc: &StutterObject,
     operand: &StutterObject,
     env: &HashTrieMap<String, StutterObject>,
+    global_env: &HashMap<String, StutterObject>,
 ) -> Result<StutterObject, String> {
-    let resolved_operand = lookup_env(&operand, &env)?;
-    let resolved_acc = lookup_env(&acc, &env)?;
+    let resolved_operand = lookup_env(&operand, &env, &global_env)?;
+    let resolved_acc = lookup_env(&acc, &env, &global_env)?;
     match (resolved_acc, resolved_operand) {
         (StutterObject::Num(n1), StutterObject::Num(n2)) => match op {
             Op::Add => Ok(StutterObject::Num(n1 + n2)),
@@ -317,10 +338,10 @@ fn apply_op(
         },
         _ => {
             let msg = format!(
-                "type error: ({:?} {:?} {:?}) not supported",
+                "incompatible types: ({:?} {:?} {:?}) not supported",
                 op,
-                lookup_env(&acc, &env)?,
-                lookup_env(&operand, &env)?
+                lookup_env(&acc, &env, &global_env)?,
+                lookup_env(&operand, &env, &global_env)?
             );
             Err(msg)
         }
@@ -331,10 +352,11 @@ fn reduce(
     op: &Op,
     list: &Vec<StutterObject>,
     env: &HashTrieMap<String, StutterObject>,
+    global_env: &HashMap<String, StutterObject>,
 ) -> Result<StutterObject, String> {
     let mut acc = list[0].clone();
     for operand in list[1..].iter() {
-        acc = apply_op(op, &acc, &operand, env)?;
+        acc = apply_op(op, &acc, &operand, env, global_env)?;
     }
     Ok(acc)
 }
@@ -374,6 +396,7 @@ fn eval_lambda_params(
     name: &String,
     val: &ParseTree,
     env: &HashTrieMap<String, StutterObject>,
+    global_env: &mut HashMap<String, StutterObject>,
 ) -> Result<(String, StutterObject), String> {
     match &val {
         ParseTree::Branch(tok, params_and_func) => match tok {
@@ -397,13 +420,43 @@ fn eval_lambda_params(
                 tok
             ))),
         },
-        _ => Ok((name.to_string(), eval(&val, &env)?)),
+        _ => Ok((name.to_string(), eval(&val, &env, global_env)?)),
+    }
+}
+
+fn eval_func(
+    name: &String,
+    xs: &Vec<ParseTree>,
+    env: &HashTrieMap<String, StutterObject>,
+    global_env: &mut HashMap<String, StutterObject>,
+) -> Result<StutterObject, String> {
+    let func_body = env.get(name);
+    match func_body {
+        Some(body) => {
+            match body {
+                StutterObject::Lambda(params, expr) => {
+                    let mut new_env = env.clone();
+                    // TODO: use resolved instead of xs
+                    for (param, arg) in params.iter().zip(xs) {
+                        // TODO: multithread this
+                        let resolved_arg = eval(&arg, &env, global_env)?;
+                        new_env = new_env
+                            .clone()
+                            .insert(param.to_string(), resolved_arg);
+                    }
+                    eval(&expr, &new_env, global_env)
+                }
+                _ => Ok(body.clone()),
+            }
+        }
+        None => Err(format!("func: {} not in scope", name)),
     }
 }
 
 fn eval_let(
     xs: &Vec<ParseTree>,
     env: &HashTrieMap<String, StutterObject>,
+    global_env: &mut HashMap<String, StutterObject>,
 ) -> Result<StutterObject, String> {
     let expr = &xs[xs.len() - 1];
     let mut new_env = env.clone();
@@ -422,17 +475,22 @@ fn eval_let(
                         match &val_vec[0] {
                             ParseTree::Branch(Op::List, xs) => {
                                 let v: Result<Vec<StutterObject>, String> = xs
-                                    .par_iter()
-                                    .map(|exp| eval(&exp, &env))
+                                    .iter()
+                                    .map(|exp| eval(&exp, &env, global_env))
                                     .collect();
                                 let resolved = v?;
                                 let env = env.insert(
                                     name.to_string(),
                                     StutterObject::List(resolved),
                                 );
-                                return eval(&expr, &env);
+                                return eval(&expr, &env, global_env);
                             }
-                            _ => eval_lambda_params(&name, &val_vec[0], &env),
+                            _ => eval_lambda_params(
+                                &name,
+                                &val_vec[0],
+                                &env,
+                                global_env,
+                            ),
                         }
                     }
                 }
@@ -442,53 +500,63 @@ fn eval_let(
         }?;
         new_env = new_env.clone().insert(var.clone(), val.clone());
     }
-    eval(&expr, &new_env)
+    eval(&expr, &new_env, global_env)
 }
 
-fn eval_func(
-    name: &String,
+fn unpack_string_from_leaf(tree: &ParseTree) -> Result<String, String> {
+    match tree {
+        ParseTree::Leaf(id) => match id {
+            Token::Id(s) => Ok(s.to_string()),
+            _ => Err(String::from("expecting function name")),
+        },
+        ParseTree::Branch(op, v) => {
+            Err(String::from("expecting function name, got branch"))
+        }
+    }
+}
+
+fn eval_def(
     xs: &Vec<ParseTree>,
     env: &HashTrieMap<String, StutterObject>,
-) -> Result<StutterObject, String> {
-    let func_body = env.get(name);
-    match func_body {
-        Some(body) => {
-            match body {
-                StutterObject::Lambda(params, expr) => {
-                    let mut new_env = env.clone();
-                    // TODO: use resolved instead of xs
-                    for (param, arg) in params.iter().zip(xs) {
-                        // TODO: multithread this
-                        let resolved_arg = eval(&arg, &env)?;
-                        new_env = new_env
-                            .clone()
-                            .insert(param.to_string(), resolved_arg);
-                    }
-                    eval(&expr, &new_env)
-                }
-                _ => Ok(body.clone()),
-            }
-        }
-        None => Err(format!("func: {} not in scope", name)),
+    global_env: &mut HashMap<String, StutterObject>,
+) -> Result<(String, StutterObject), String> {
+    println!("{:#?}", xs);
+    if xs.len() != 2 {
+        return Err(String::from("expecting form of (def VAR EXPR)"));
     }
+    let name = unpack_string_from_leaf(&xs[0])?;
+    let expr = &xs[1];
+    let value = eval(&expr, &env, global_env)?;
+    Ok((name, value))
 }
 
 fn eval_branch(
     op: &Op,
     xs: &Vec<ParseTree>,
     env: &HashTrieMap<String, StutterObject>,
+    global_env: &mut HashMap<String, StutterObject>,
 ) -> Result<StutterObject, String> {
     let v = xs.to_vec();
     let resolved: Result<Vec<StutterObject>, String> =
-        v.par_iter().map(|expr| eval(&expr, &env)).collect();
+        v.iter().map(|expr| eval(&expr, &env, global_env)).collect();
 
     match op {
-        Op::Add | Op::Sub | Op::Mul | Op::Div => reduce(op, &resolved?, &env),
+        Op::Add | Op::Sub | Op::Mul | Op::Div => {
+            reduce(op, &resolved?, &env, &global_env)
+        }
 
-        Op::Func(name) => eval_func(&name, &xs, &env),
+        Op::Func(name) => eval_func(&name, &xs, &env, global_env),
 
         // TODO: use resolved instead of xs here
-        Op::Let => eval_let(&xs, &env),
+        Op::Let => eval_let(&xs, &env, global_env),
+
+        Op::Def => {
+            let (name, value) = eval_def(&xs, &env, global_env)?;
+            global_env.insert(name, value);
+            println!("after insertion: {:#?}", global_env);
+            Ok(StutterObject::Nil)
+        }
+
         Op::List => {
             let v = resolved?;
             Ok(StutterObject::List(v))
@@ -552,13 +620,14 @@ fn eval_branch(
 fn eval(
     tree: &ParseTree,
     env: &HashTrieMap<String, StutterObject>,
+    global_env: &mut HashMap<String, StutterObject>,
 ) -> Result<StutterObject, String> {
     match tree {
-        ParseTree::Branch(op, xs) => eval_branch(&op, &xs, &env),
+        ParseTree::Branch(op, xs) => eval_branch(&op, &xs, &env, global_env),
         ParseTree::Leaf(tok) => {
             let obj = token_to_stutterobject(&tok)?;
             match obj {
-                StutterObject::Id(_) => lookup_env(&obj, &env),
+                StutterObject::Id(_) => lookup_env(&obj, &env, &global_env),
                 _ => Ok(obj),
             }
         }
@@ -572,7 +641,8 @@ fn run(cmd: &String) -> Result<StutterObject, String> {
     } else {
         let tree = parse(&tokens)?;
         let env = HashTrieMap::new();
-        let result = eval(&tree, &env)?;
+        let mut global_env = HashMap::new();
+        let result = eval(&tree, &env, &mut global_env)?;
         Ok(result)
     }
 }
