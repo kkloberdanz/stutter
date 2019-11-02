@@ -32,6 +32,11 @@ enum Token {
     Minus,
     Times,
     Slash,
+    Gt,
+    Lt,
+    Eq,
+    Gte,
+    Lte,
     Let,
     Def,
     List,
@@ -42,6 +47,7 @@ enum Token {
     Take,
     Num(i64),
     Dec(f64),
+    Bool(bool),
     Id(String),
 }
 
@@ -51,6 +57,11 @@ enum Op {
     Sub,
     Mul,
     Div,
+    Gt,
+    Lt,
+    Eq,
+    Gte,
+    Lte,
     Let,
     Def,
     List,
@@ -67,6 +78,7 @@ enum StutterObject {
     Nil,
     Num(i64),
     Dec(f64),
+    Bool(bool),
     Id(String),
     Lambda(Vec<String>, ParseTree),
     List(Vec<StutterObject>),
@@ -123,6 +135,8 @@ fn to_token(s: &String) -> Token {
         Token::Num(t)
     } else if let Ok(t) = s.parse::<f64>() {
         Token::Dec(t)
+    } else if let Ok(t) = s.parse::<bool>() {
+        Token::Bool(t)
     } else {
         match s.as_ref() {
             "(" => Token::Lparen,
@@ -131,6 +145,11 @@ fn to_token(s: &String) -> Token {
             "-" => Token::Minus,
             "*" => Token::Times,
             "/" => Token::Slash,
+            "<" => Token::Lt,
+            ">" => Token::Gt,
+            "=" => Token::Eq,
+            ">=" => Token::Gte,
+            "<=" => Token::Lte,
             "let" => Token::Let,
             "def" => Token::Def,
             "list" => Token::List,
@@ -149,6 +168,7 @@ fn token_to_stutterobject(tok: &Token) -> Result<StutterObject, String> {
         Token::Id(s) => Ok(StutterObject::Id(s.to_string())),
         Token::Num(i) => Ok(StutterObject::Num(*i)),
         Token::Dec(f) => Ok(StutterObject::Dec(*f)),
+        Token::Bool(b) => Ok(StutterObject::Bool(*b)),
         _ => Err(format!("token: {:?} does not form a valid atom", tok)),
     }
 }
@@ -159,6 +179,11 @@ fn token_to_op(tok: &Token) -> Result<Op, String> {
         Token::Minus => Ok(Op::Sub),
         Token::Times => Ok(Op::Mul),
         Token::Slash => Ok(Op::Div),
+        Token::Gt => Ok(Op::Gt),
+        Token::Lt => Ok(Op::Lt),
+        Token::Eq => Ok(Op::Eq),
+        Token::Gte => Ok(Op::Gte),
+        Token::Lte => Ok(Op::Lte),
         Token::Let => Ok(Op::Let),
         Token::Def => Ok(Op::Def),
         Token::List => Ok(Op::List),
@@ -339,6 +364,11 @@ fn apply_op(
             Op::Sub => Ok(StutterObject::Num(n1 - n2)),
             Op::Div => Ok(StutterObject::Num(n1 / n2)),
             Op::Mul => Ok(StutterObject::Num(n1 * n2)),
+            Op::Gt => Ok(StutterObject::Bool(n1 > n2)),
+            Op::Lt => Ok(StutterObject::Bool(n1 < n2)),
+            Op::Eq => Ok(StutterObject::Bool(n1 == n2)),
+            Op::Gte => Ok(StutterObject::Bool(n1 >= n2)),
+            Op::Lte => Ok(StutterObject::Bool(n1 <= n2)),
             _ => Err(format!("{:?} not implemented", op)),
         },
         (StutterObject::Dec(f1), StutterObject::Dec(f2)) => match op {
@@ -346,6 +376,11 @@ fn apply_op(
             Op::Sub => Ok(StutterObject::Dec(f1 - f2)),
             Op::Div => Ok(StutterObject::Dec(f1 / f2)),
             Op::Mul => Ok(StutterObject::Dec(f1 * f2)),
+            Op::Gt => Ok(StutterObject::Bool(f1 > f2)),
+            Op::Lt => Ok(StutterObject::Bool(f1 < f2)),
+            Op::Eq => Ok(StutterObject::Bool(f1 == f2)),
+            Op::Gte => Ok(StutterObject::Bool(f1 >= f2)),
+            Op::Lte => Ok(StutterObject::Bool(f1 <= f2)),
             _ => Err(format!("{:?} not implemented", op)),
         },
         _ => {
@@ -550,9 +585,15 @@ fn eval_branch(
         .collect();
 
     match op {
-        Op::Add | Op::Sub | Op::Mul | Op::Div => {
-            reduce(op, &resolved?, &env, global_env)
-        }
+        Op::Add
+        | Op::Sub
+        | Op::Mul
+        | Op::Div
+        | Op::Eq
+        | Op::Gt
+        | Op::Lt
+        | Op::Gte
+        | Op::Lte => reduce(op, &resolved?, &env, global_env),
 
         Op::Func(name) => eval_func(&name, &xs, &env, global_env),
 
