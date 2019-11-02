@@ -127,8 +127,8 @@ fn prompt_user(prompt: &String) -> Input {
         }
     }
     match user_input.as_ref() {
-        "q" => Input::Quit,
-        "" | "  " => Input::None,
+        " q " => Input::Quit,
+        "  " => Input::None,
         _ => Input::Command(user_input),
     }
 }
