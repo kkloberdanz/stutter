@@ -439,8 +439,6 @@ fn eval_func(
     global_env: &mut HashMap<String, StutterObject>,
 ) -> Result<StutterObject, String> {
     let body = lookup_env_string(&name, &env, global_env)?;
-    println!("name: {}", name);
-    println!("body: {:#?}", body);
     match body {
         StutterObject::Lambda(params, expr) => {
             let mut new_env = env.clone();
@@ -531,7 +529,6 @@ fn eval_def(
     }
     let name = unpack_string_from_leaf(&xs[0])?;
     let expr = &xs[1];
-    println!("expr: {:#?}", expr);
     let value = eval(&expr, &env, global_env, false)?;
     Ok((name, value))
 }
@@ -626,7 +623,6 @@ fn eval_branch(
 
 fn params_to_string(params: &ParseTree) -> Result<Vec<String>, String> {
     let mut params_vec = Vec::new();
-    println!("params: {:#?}", params);
     match params {
         ParseTree::Branch(op, term_vec) => {
             match op {
@@ -634,7 +630,6 @@ fn params_to_string(params: &ParseTree) -> Result<Vec<String>, String> {
                 _ => return Err(String::from("expecting first param")),
             };
             for item in term_vec.iter() {
-                println!("item: {:#?}", item);
                 match item {
                     ParseTree::Leaf(Token::Id(s)) => {
                         params_vec.push(s.to_string())
@@ -642,8 +637,6 @@ fn params_to_string(params: &ParseTree) -> Result<Vec<String>, String> {
                     _ => return Err(String::from("expecting param list")),
                 }
             }
-            println!("op: {:#?}", op);
-            println!("term_vec: {:#?}", term_vec);
             Ok(params_vec)
         }
         _ => Err(String::from("problem getting params")),
@@ -658,8 +651,6 @@ fn eval(
 ) -> Result<StutterObject, String> {
     match tree {
         ParseTree::Branch(op, xs) => {
-            println!("op: {:#?}", op);
-            println!("xs: {:#?}", xs);
             if fully_eval_lambda {
                 eval_branch(&op, &xs, &env, global_env)
             } else {
