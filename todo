@@ -1,9 +1,11 @@
-1) boolean expressions
+DONE 1) boolean expressions
 
-2) if expressions
+DONE 2) if expressions
 
 3) reading in standard library at startup
 
 4) implement standard library
 
 5) strings
+
+6) automated tests
