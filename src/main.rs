@@ -305,6 +305,21 @@ fn lookup_env(
     }
 }
 
+fn lookup_env_string(
+    name: &String,
+    env: &HashTrieMap<String, StutterObject>,
+    global_env: &mut HashMap<String, StutterObject>,
+) -> Result<StutterObject, String> {
+    let res = env.get(name);
+    match res {
+        Some(x) => Ok(x.clone()),
+        _ => match global_env.get(name) {
+            Some(y) => Ok(y.clone()),
+            _ => Err(format!("'{}' is not in scope", name))
+        }
+    }
+}
+
 fn apply_op(
     op: &Op,
     acc: &StutterObject,
@@ -413,7 +428,7 @@ fn eval_lambda_params(
                 tok
             ))),
         },
-        _ => Ok((name.to_string(), eval(&val, &env, global_env)?)),
+        _ => Ok((name.to_string(), eval(&val, &env, global_env, true)?)),
     }
 }
 
@@ -423,26 +438,23 @@ fn eval_func(
     env: &HashTrieMap<String, StutterObject>,
     global_env: &mut HashMap<String, StutterObject>,
 ) -> Result<StutterObject, String> {
-    let func_body = env.get(name);
-    match func_body {
-        Some(body) => {
-            match body {
-                StutterObject::Lambda(params, expr) => {
-                    let mut new_env = env.clone();
-                    // TODO: use resolved instead of xs
-                    for (param, arg) in params.iter().zip(xs) {
-                        // TODO: multithread this
-                        let resolved_arg = eval(&arg, &env, global_env)?;
-                        new_env = new_env
-                            .clone()
-                            .insert(param.to_string(), resolved_arg);
-                    }
-                    eval(&expr, &new_env, global_env)
-                }
-                _ => Ok(body.clone()),
+    let body = lookup_env_string(&name, &env, global_env)?;
+    println!("name: {}", name);
+    println!("body: {:#?}", body);
+    match body {
+        StutterObject::Lambda(params, expr) => {
+            let mut new_env = env.clone();
+            // TODO: use resolved instead of xs
+            for (param, arg) in params.iter().zip(xs) {
+                // TODO: multithread this
+                let resolved_arg = eval(&arg, &env, global_env, true)?;
+                new_env = new_env
+                    .clone()
+                    .insert(param.to_string(), resolved_arg);
             }
+            eval(&expr, &new_env, global_env, true)
         }
-        None => Err(format!("func: {} not in scope", name)),
+        _ => Ok(body.clone()),
     }
 }
 
@@ -469,14 +481,14 @@ fn eval_let(
                             ParseTree::Branch(Op::List, xs) => {
                                 let v: Result<Vec<StutterObject>, String> = xs
                                     .iter()
-                                    .map(|exp| eval(&exp, &env, global_env))
+                                    .map(|exp| eval(&exp, &env, global_env, true))
                                     .collect();
                                 let resolved = v?;
                                 let env = env.insert(
                                     name.to_string(),
                                     StutterObject::List(resolved),
                                 );
-                                return eval(&expr, &env, global_env);
+                                return eval(&expr, &env, global_env, true);
                             }
                             _ => eval_lambda_params(
                                 &name,
@@ -493,7 +505,7 @@ fn eval_let(
         }?;
         new_env = new_env.clone().insert(var.clone(), val.clone());
     }
-    eval(&expr, &new_env, global_env)
+    eval(&expr, &new_env, global_env, true)
 }
 
 fn unpack_string_from_leaf(tree: &ParseTree) -> Result<String, String> {
@@ -518,7 +530,8 @@ fn eval_def(
     }
     let name = unpack_string_from_leaf(&xs[0])?;
     let expr = &xs[1];
-    let value = eval(&expr, &env, global_env)?;
+    println!("expr: {:#?}", expr);
+    let value = eval(&expr, &env, global_env, false)?;
     Ok((name, value))
 }
 
@@ -530,7 +543,7 @@ fn eval_branch(
 ) -> Result<StutterObject, String> {
     let v = xs.to_vec();
     let resolved: Result<Vec<StutterObject>, String> =
-        v.iter().map(|expr| eval(&expr, &env, global_env)).collect();
+        v.iter().map(|expr| eval(&expr, &env, global_env, true)).collect();
 
     match op {
         Op::Add | Op::Sub | Op::Mul | Op::Div => {
@@ -608,13 +621,54 @@ fn eval_branch(
     }
 }
 
+fn params_to_string(params: &ParseTree) -> Result<Vec<String>, String> {
+    let mut params_vec = Vec::new();
+    println!("params: {:#?}", params);
+    match params {
+        ParseTree::Branch(op, term_vec) => {
+            match op {
+                Op::Func(first_term) => params_vec.push(first_term.clone()),
+                _ => return Err(String::from("expecting first param"))
+            };
+            for item in term_vec.iter() {
+                println!("item: {:#?}", item);
+                match item {
+                    ParseTree::Leaf(Token::Id(s)) => params_vec.push(s.to_string()),
+                    _ => return Err(String::from("expecting param list"))
+                }
+            }
+            println!("op: {:#?}", op);
+            println!("term_vec: {:#?}", term_vec);
+            Ok(params_vec)
+        },
+        _ => Err(String::from("problem getting params"))
+    }
+}
+
 fn eval(
     tree: &ParseTree,
     env: &HashTrieMap<String, StutterObject>,
     global_env: &mut HashMap<String, StutterObject>,
+    fully_eval_lambda: bool
 ) -> Result<StutterObject, String> {
     match tree {
-        ParseTree::Branch(op, xs) => eval_branch(&op, &xs, &env, global_env),
+        ParseTree::Branch(op, xs) => {
+            println!("op: {:#?}", op);
+            println!("xs: {:#?}", xs);
+            if fully_eval_lambda {
+                eval_branch(&op, &xs, &env, global_env)
+            } else {
+                match op {
+                    Op::Func(_s) => {
+                        let params = &xs[0];
+                        let params_as_string = params_to_string(&params)?;
+                        let expr = &xs[1];
+                        Ok(StutterObject::Lambda(params_as_string, expr.clone()))
+                    }
+                    _ => eval_branch(&op, &xs, &env, global_env),
+                }
+            }
+        }
         ParseTree::Leaf(tok) => {
             let obj = token_to_stutterobject(&tok)?;
             match obj {
@@ -635,7 +689,7 @@ fn run(
     } else {
         let tree = parse(&tokens)?;
         let env = HashTrieMap::new();
-        let result = eval(&tree, &env, global_env)?;
+        let result = eval(&tree, &env, global_env, true)?;
         Ok(result)
     }
 }
@@ -666,3 +720,4 @@ fn main() {
 }
 
 // test = (+ 1 2 3 (- 4 5) (* (- 6 7) 8))
+// (def f (lambda (x y z) (+ x y z)))
