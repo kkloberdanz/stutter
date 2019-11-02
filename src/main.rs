@@ -37,6 +37,7 @@ enum Token {
     List,
     Index,
     Drop,
+    Append,
     Len,
     Take,
     Num(i64),
@@ -55,6 +56,7 @@ enum Op {
     List,
     Index,
     Drop,
+    Append,
     Len,
     Take,
     Func(String),
@@ -135,6 +137,7 @@ fn to_token(s: &String) -> Token {
             "take" => Token::Take,
             "index" => Token::Index,
             "drop" => Token::Drop,
+            "append" => Token::Append,
             "len" => Token::Len,
             _ => Token::Id(s.to_string()),
         }
@@ -162,6 +165,7 @@ fn token_to_op(tok: &Token) -> Result<Op, String> {
         Token::Index => Ok(Op::Index),
         Token::Take => Ok(Op::Take),
         Token::Drop => Ok(Op::Drop),
+        Token::Append => Ok(Op::Append),
         Token::Len => Ok(Op::Len),
         Token::Id(s) => Ok(Op::Func(s.to_string())),
         _ => Err(format!("invalid op: {:?}", tok)),
@@ -604,6 +608,21 @@ fn eval_branch(
                 }
                 _ => Err(String::from(
                     "type error: expected form (drop NUM LIST)",
+                )),
+            }
+        }
+        Op::Append => {
+            let v = resolved?;
+            let i = &v[0];
+            let list = &v[1];
+            match list {
+                StutterObject::List(l) => {
+                    let mut vec = l.clone();
+                    vec.push(i.clone());
+                    Ok(StutterObject::List(vec))
+                }
+                _ => Err(String::from(
+                    "type error: expected form (append NUM LIST)",
                 )),
             }
         }
