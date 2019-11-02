@@ -42,6 +42,7 @@ enum Token {
     List,
     Index,
     Drop,
+    Quote,
     Append,
     Len,
     Take,
@@ -68,6 +69,7 @@ enum Op {
     List,
     Index,
     Drop,
+    Quote,
     Append,
     Len,
     Take,
@@ -159,6 +161,7 @@ fn to_token(s: &String) -> Token {
             "if" => Token::If,
             "index" => Token::Index,
             "drop" => Token::Drop,
+            "quote" => Token::Quote,
             "append" => Token::Append,
             "len" => Token::Len,
             _ => Token::Id(s.to_string()),
@@ -194,6 +197,7 @@ fn token_to_op(tok: &Token) -> Result<Op, String> {
         Token::Take => Ok(Op::Take),
         Token::If => Ok(Op::If),
         Token::Drop => Ok(Op::Drop),
+        Token::Quote => Ok(Op::Quote),
         Token::Append => Ok(Op::Append),
         Token::Len => Ok(Op::Len),
         Token::Id(s) => Ok(Op::Func(s.to_string())),
@@ -617,6 +621,15 @@ fn eval_branch(
             let (name, value) = eval_def(&xs, &env, global_env)?;
             global_env.insert(name, value);
             Ok(StutterObject::Nil)
+        }
+
+        Op::Quote => {
+            if xs.len() != 1 {
+                Err(String::from("expecting: (quote ITEM)"))
+            } else {
+                let v = eval(&xs[0], &env, global_env, false)?;
+                Ok(v)
+            }
         }
 
         Op::List => {
