@@ -126,10 +126,9 @@ fn prompt_user(prompt: &String) -> Input {
             break;
         }
     }
-
     match user_input.as_ref() {
         "q" => Input::Quit,
-        "" => Input::None,
+        "" | "  " => Input::None,
         _ => Input::Command(user_input),
     }
 }
