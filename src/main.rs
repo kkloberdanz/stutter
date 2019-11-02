@@ -283,26 +283,24 @@ fn parse(tokens: &Vec<Token>) -> Result<ParseTree, String> {
 
 fn lookup_global_env(
     variable_name: &String,
-    global_env: &HashMap<String, StutterObject>,
+    global_env: &mut HashMap<String, StutterObject>,
 ) -> Result<StutterObject, String> {
     match global_env.get(variable_name) {
         Some(value) => Ok(value.clone()),
-        None => Err(format!("{} not in scope", variable_name)),
+        None => Err(format!("'{}' not in scope", variable_name)),
     }
 }
 
 fn lookup_env(
     obj: &StutterObject,
     env: &HashTrieMap<String, StutterObject>,
-    global_env: &HashMap<String, StutterObject>,
+    global_env: &mut HashMap<String, StutterObject>,
 ) -> Result<StutterObject, String> {
     match obj {
         StutterObject::Id(variable_name) => {
-            println!("var: {:#?}", variable_name);
-            println!("env: {:#?}", global_env);
             match env.get(variable_name) {
                 Some(value) => Ok(value.clone()),
-                None => lookup_global_env(&variable_name, &global_env),
+                None => lookup_global_env(&variable_name, global_env),
             }
         }
         _ => Ok(obj.clone()),
@@ -314,10 +312,10 @@ fn apply_op(
     acc: &StutterObject,
     operand: &StutterObject,
     env: &HashTrieMap<String, StutterObject>,
-    global_env: &HashMap<String, StutterObject>,
+    global_env: &mut HashMap<String, StutterObject>,
 ) -> Result<StutterObject, String> {
-    let resolved_operand = lookup_env(&operand, &env, &global_env)?;
-    let resolved_acc = lookup_env(&acc, &env, &global_env)?;
+    let resolved_operand = lookup_env(&operand, &env, global_env)?;
+    let resolved_acc = lookup_env(&acc, &env, global_env)?;
     match (resolved_acc, resolved_operand) {
         (StutterObject::Num(n1), StutterObject::Num(n2)) => match op {
             Op::Add => Ok(StutterObject::Num(n1 + n2)),
@@ -337,8 +335,8 @@ fn apply_op(
             let msg = format!(
                 "incompatible types: ({:?} {:?} {:?}) not supported",
                 op,
-                lookup_env(&acc, &env, &global_env)?,
-                lookup_env(&operand, &env, &global_env)?
+                lookup_env(&acc, &env, global_env)?,
+                lookup_env(&operand, &env, global_env)?
             );
             Err(msg)
         }
@@ -349,7 +347,7 @@ fn reduce(
     op: &Op,
     list: &Vec<StutterObject>,
     env: &HashTrieMap<String, StutterObject>,
-    global_env: &HashMap<String, StutterObject>,
+    global_env: &mut HashMap<String, StutterObject>,
 ) -> Result<StutterObject, String> {
     let mut acc = list[0].clone();
     for operand in list[1..].iter() {
@@ -517,7 +515,6 @@ fn eval_def(
     env: &HashTrieMap<String, StutterObject>,
     global_env: &mut HashMap<String, StutterObject>,
 ) -> Result<(String, StutterObject), String> {
-    println!("{:#?}", xs);
     if xs.len() != 2 {
         return Err(String::from("expecting form of (def VAR EXPR)"));
     }
@@ -539,7 +536,7 @@ fn eval_branch(
 
     match op {
         Op::Add | Op::Sub | Op::Mul | Op::Div => {
-            reduce(op, &resolved?, &env, &global_env)
+            reduce(op, &resolved?, &env, global_env)
         }
 
         Op::Func(name) => eval_func(&name, &xs, &env, global_env),
@@ -550,7 +547,6 @@ fn eval_branch(
         Op::Def => {
             let (name, value) = eval_def(&xs, &env, global_env)?;
             global_env.insert(name, value);
-            println!("after insertion: {:#?}", global_env);
             Ok(StutterObject::Nil)
         }
 
@@ -624,35 +620,38 @@ fn eval(
         ParseTree::Leaf(tok) => {
             let obj = token_to_stutterobject(&tok)?;
             match obj {
-                StutterObject::Id(_) => lookup_env(&obj, &env, &global_env),
+                StutterObject::Id(_) => lookup_env(&obj, &env, global_env),
                 _ => Ok(obj),
             }
         }
     }
 }
 
-fn run(cmd: &String) -> Result<StutterObject, String> {
+fn run(
+    cmd: &String,
+    global_env: &mut HashMap<String, StutterObject>,
+) -> Result<StutterObject, String> {
     let tokens = lex(&cmd)?;
     if tokens.len() == 0 {
         Ok(StutterObject::Nil)
     } else {
         let tree = parse(&tokens)?;
         let env = HashTrieMap::new();
-        let mut global_env = HashMap::new();
-        let result = eval(&tree, &env, &mut global_env)?;
+        let result = eval(&tree, &env, global_env)?;
         Ok(result)
     }
 }
 
 fn main() {
     let prompt = String::from("λ ");
+    let mut global_env = HashMap::new();
     loop {
         // Read
         let cmd = prompt_user(&prompt);
         match cmd {
             Input::Command(s) => {
                 // Eval
-                let result = run(&s);
+                let result = run(&s, &mut global_env);
 
                 // Print
                 match result {
