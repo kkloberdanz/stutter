@@ -116,3 +116,12 @@
 (def map
   (lambda (f l)
     (rec-map f l (list))))
+
+(def quicksort
+  (lambda (mylist)
+    (if (empty mylist)
+      (list)
+      (cat (quicksort (filter (lambda (x) (< x (head mylist))) (tail mylist)))
+           (list (head mylist))
+           (quicksort (filter (lambda (x) (>= x (head mylist)))
+                              (tail mylist)))))))

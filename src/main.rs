@@ -706,18 +706,21 @@ fn eval_branch(
         }
         Op::Cat => {
             let v = resolve_exprs(&xs, &env, global_env)?;
-            let list1 = &v[0];
-            let list2 = &v[1];
-            match (list1, list2) {
-                (StutterObject::List(vec1), StutterObject::List(vec2)) => {
-                    let mut vec = vec1.clone();
-                    vec.append(&mut vec2.clone());
-                    Ok(StutterObject::List(vec))
+            let mut master_vec = Vec::new();
+            for list in v.iter() {
+                match list {
+                    StutterObject::List(vec) => {
+                        master_vec.append(&mut vec.clone());
+                    }
+                    _ => {
+                        return Err(format!(
+                            "cat: expecting list, got {:?}",
+                            list
+                        ))
+                    }
                 }
-                _ => Err(String::from(
-                    "type error: expected form (append ITEM LIST)",
-                )),
             }
+            Ok(StutterObject::List(master_vec))
         }
         Op::Len => {
             let v = resolve_exprs(&xs, &env, global_env)?;
