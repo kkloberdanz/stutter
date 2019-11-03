@@ -16,6 +16,7 @@
 extern crate num_bigint;
 extern crate num_traits;
 
+use std::fmt;
 use num_bigint::BigInt;
 use crate::num_bigint::ToBigInt;
 use num_traits::cast::ToPrimitive;
@@ -100,6 +101,30 @@ enum StutterObject {
     Id(String),
     Lambda(Vec<String>, ParseTree),
     List(Vec<StutterObject>),
+}
+
+impl fmt::Display for StutterObject {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+       match &*self {
+           StutterObject::Nil => write!(f, "Nil"),
+           StutterObject::Int(i) => write!(f, "{}", i.to_string()),
+           StutterObject::Dec(d) => write!(f, "{}", d.to_string()),
+           StutterObject::Bool(b) => write!(f, "{}", b.to_string()),
+           StutterObject::Id(s) => write!(f, "{}", s),
+           StutterObject::Lambda(l, tree) => write!(f, "{}", "<lambda>"),
+           StutterObject::List(vec) => {
+               let mut string = String::new();
+               for item in vec.iter() {
+                   if string.len() == 0 {
+                       string = format!("{}", item);
+                   } else {
+                       string = format!("{}, {}", string, item);
+                   }
+               }
+               write!(f, "{}", string)
+           },
+       }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -953,7 +978,7 @@ fn main() {
 
                 // Print
                 match result {
-                    Ok(r) => println!("{:?}", r),
+                    Ok(r) => println!("{}", r),
                     Err(e) => println!("error: {}", e),
                 }
             }
