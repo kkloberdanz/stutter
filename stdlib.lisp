@@ -9,6 +9,7 @@
 (def div (lambda (x y) (/ x y)))
 (def mod (lambda (x y) (% x y)))
 (def sqrt (lambda (x) (pow x 0.5)))
+(def last_n (lambda (n l) (drop (- (len l) n) l)))
 
 (def or
   (lambda (x y)
