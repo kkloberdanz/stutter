@@ -111,7 +111,7 @@ impl fmt::Display for StutterObject {
            StutterObject::Dec(d) => write!(f, "{}", d.to_string()),
            StutterObject::Bool(b) => write!(f, "{}", b.to_string()),
            StutterObject::Id(s) => write!(f, "{}", s),
-           StutterObject::Lambda(l, tree) => write!(f, "{}", "<lambda>"),
+           StutterObject::Lambda(_l, _tree) => write!(f, "{}", "<lambda>"),
            StutterObject::List(vec) => {
                let mut string = String::new();
                for item in vec.iter() {
