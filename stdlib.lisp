@@ -8,6 +8,7 @@
 (def mul (lambda (x y) (* x y)))
 (def div (lambda (x y) (/ x y)))
 (def mod (lambda (x y) (% x y)))
+(def sqrt (lambda (x) (pow x 0.5)))
 
 (def or
   (lambda (x y)
