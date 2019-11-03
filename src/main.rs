@@ -51,7 +51,7 @@ enum Token {
     Len,
     Take,
     If,
-    Nat(i64),
+    Int(i64),
     Dec(f64),
     Bool(bool),
     Id(String),
@@ -87,7 +87,7 @@ enum Op {
 #[derive(Clone, Debug, PartialEq)]
 enum StutterObject {
     Nil,
-    Nat(i64),
+    Int(i64),
     Dec(f64),
     Bool(bool),
     Id(String),
@@ -142,7 +142,7 @@ fn prompt_user(prompt: &String) -> Input {
 
 fn to_token(s: &String) -> Token {
     if let Ok(t) = s.parse::<i64>() {
-        Token::Nat(t)
+        Token::Int(t)
     } else if let Ok(t) = s.parse::<f64>() {
         Token::Dec(t)
     } else if let Ok(t) = s.parse::<bool>() {
@@ -181,7 +181,7 @@ fn to_token(s: &String) -> Token {
 fn token_to_stutterobject(tok: &Token) -> Result<StutterObject, String> {
     match tok {
         Token::Id(s) => Ok(StutterObject::Id(s.to_string())),
-        Token::Nat(i) => Ok(StutterObject::Nat(*i)),
+        Token::Int(i) => Ok(StutterObject::Int(*i)),
         Token::Dec(f) => Ok(StutterObject::Dec(*f)),
         Token::Bool(b) => Ok(StutterObject::Bool(*b)),
         _ => Err(format!("token: {:?} does not form a valid atom", tok)),
@@ -379,13 +379,13 @@ fn apply_op(
     let resolved_operand = lookup_env(&operand, &env, global_env)?;
     let resolved_acc = lookup_env(&acc, &env, global_env)?;
     match (resolved_acc, resolved_operand) {
-        (StutterObject::Nat(n1), StutterObject::Nat(n2)) => match op {
-            Op::Add => Ok(StutterObject::Nat(n1 + n2)),
-            Op::Sub => Ok(StutterObject::Nat(n1 - n2)),
-            Op::Div => Ok(StutterObject::Nat(n1 / n2)),
-            Op::Mod => Ok(StutterObject::Nat(n1 % n2)),
-            Op::Pow => Ok(StutterObject::Nat(n1.pow(n2 as u32))),
-            Op::Mul => Ok(StutterObject::Nat(n1 * n2)),
+        (StutterObject::Int(n1), StutterObject::Int(n2)) => match op {
+            Op::Add => Ok(StutterObject::Int(n1 + n2)),
+            Op::Sub => Ok(StutterObject::Int(n1 - n2)),
+            Op::Div => Ok(StutterObject::Int(n1 / n2)),
+            Op::Mod => Ok(StutterObject::Int(n1 % n2)),
+            Op::Pow => Ok(StutterObject::Int(n1.pow(n2 as u32))),
+            Op::Mul => Ok(StutterObject::Int(n1 * n2)),
             Op::Gt => Ok(StutterObject::Bool(n1 > n2)),
             Op::Lt => Ok(StutterObject::Bool(n1 < n2)),
             Op::Eq => Ok(StutterObject::Bool(n1 == n2)),
@@ -407,7 +407,7 @@ fn apply_op(
             Op::Lte => Ok(StutterObject::Bool(f1 <= f2)),
             _ => Err(format!("{:?} not implemented", op)),
         },
-        (StutterObject::Nat(n1), StutterObject::Dec(f2)) => match op {
+        (StutterObject::Int(n1), StutterObject::Dec(f2)) => match op {
             Op::Add => Ok(StutterObject::Dec((n1 as f64) + f2)),
             Op::Sub => Ok(StutterObject::Dec((n1 as f64) - f2)),
             Op::Div => Ok(StutterObject::Dec((n1 as f64) / f2)),
@@ -421,7 +421,7 @@ fn apply_op(
             Op::Lte => Ok(StutterObject::Bool((n1 as f64) <= f2)),
             _ => Err(format!("{:?} not implemented", op)),
         },
-        (StutterObject::Dec(f1), StutterObject::Nat(n2)) => match op {
+        (StutterObject::Dec(f1), StutterObject::Int(n2)) => match op {
             Op::Add => Ok(StutterObject::Dec(f1 + (n2 as f64))),
             Op::Sub => Ok(StutterObject::Dec(f1 - (n2 as f64))),
             Op::Div => Ok(StutterObject::Dec(f1 / (n2 as f64))),
@@ -687,7 +687,7 @@ fn eval_branch(
             let i = &v[0];
             let list = &v[1];
             match (i, list) {
-                (StutterObject::Nat(n), StutterObject::List(l)) => {
+                (StutterObject::Int(n), StutterObject::List(l)) => {
                     let size: usize = *n as usize;
                     Ok(l[size].clone())
                 }
@@ -701,7 +701,7 @@ fn eval_branch(
             let i = &v[0];
             let list = &v[1];
             match (i, list) {
-                (StutterObject::Nat(n), StutterObject::List(l)) => {
+                (StutterObject::Int(n), StutterObject::List(l)) => {
                     let size: usize = *n as usize;
                     Ok(StutterObject::List(l[..size].to_vec()))
                 }
@@ -715,7 +715,7 @@ fn eval_branch(
             let i = &v[0];
             let list = &v[1];
             match (i, list) {
-                (StutterObject::Nat(n), StutterObject::List(l)) => {
+                (StutterObject::Int(n), StutterObject::List(l)) => {
                     let size: usize = *n as usize;
                     Ok(StutterObject::List(l[size..].to_vec()))
                 }
@@ -763,7 +763,7 @@ fn eval_branch(
             match list {
                 StutterObject::List(l) => {
                     let len: i64 = l.len() as i64;
-                    Ok(StutterObject::Nat(len))
+                    Ok(StutterObject::Int(len))
                 }
                 _ => Err(String::from("type error: expected form (len LIST)")),
             }
