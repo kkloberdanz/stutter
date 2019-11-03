@@ -51,7 +51,7 @@ enum Token {
     Len,
     Take,
     If,
-    Int(i64),
+    Int(i128),
     Dec(f64),
     Bool(bool),
     Id(String),
@@ -87,7 +87,7 @@ enum Op {
 #[derive(Clone, Debug, PartialEq)]
 enum StutterObject {
     Nil,
-    Int(i64),
+    Int(i128),
     Dec(f64),
     Bool(bool),
     Id(String),
@@ -107,7 +107,7 @@ enum Production {
     Tok(Token),
 }
 
-fn count_chars(s: &String, c: char) -> i64 {
+fn count_chars(s: &String, c: char) -> i128 {
     let mut acc = 0;
     for letter in s.chars() {
         if letter == c {
@@ -141,7 +141,7 @@ fn prompt_user(prompt: &String) -> Input {
 }
 
 fn to_token(s: &String) -> Token {
-    if let Ok(t) = s.parse::<i64>() {
+    if let Ok(t) = s.parse::<i128>() {
         Token::Int(t)
     } else if let Ok(t) = s.parse::<f64>() {
         Token::Dec(t)
@@ -762,7 +762,7 @@ fn eval_branch(
             let list = &v[0];
             match list {
                 StutterObject::List(l) => {
-                    let len: i64 = l.len() as i64;
+                    let len: i128 = l.len() as i128;
                     Ok(StutterObject::Int(len))
                 }
                 _ => Err(String::from("type error: expected form (len LIST)")),
