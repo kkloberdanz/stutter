@@ -12,9 +12,9 @@
 
 (def or
   (lambda (x y)
-    (if (quote x)
+    (if (x)
       (True)
-      (if (quote y)
+      (if (y)
         (True)
         (False)))))
 
