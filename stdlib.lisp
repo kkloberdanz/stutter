@@ -106,3 +106,13 @@
     (if (<= x 1)
       False
       (rec-isprime x 2 (+ 1 (sqrt x))))))
+
+(def rec-map
+  (lambda (f l a)
+    (if (empty l)
+      a
+      (rec-map f (tail l) (append (f (head l)) a)))))
+
+(def map
+  (lambda (f l)
+    (rec-map f l (list))))

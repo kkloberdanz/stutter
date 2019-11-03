@@ -766,20 +766,30 @@ fn eval(
 ) -> Result<StutterObject, String> {
     match tree {
         ParseTree::Branch(op, xs) => {
-            if fully_eval_lambda {
+            if false {
                 eval_branch(&op, &xs, &env, global_env)
             } else {
                 match op {
-                    Op::Func(_s) => {
-                        let params = &xs[0];
-                        let params_as_string = params_to_string(&params)?;
-                        let expr = &xs[1];
-                        Ok(StutterObject::Lambda(
-                            params_as_string,
-                            expr.clone(),
-                        ))
+                    Op::Func(s) => {
+                        if fully_eval_lambda && s != "lambda" {
+                            eval_branch(&op, &xs, &env, global_env)
+                        } else {
+                            let params = &xs[0];
+                            let params_as_string = params_to_string(&params)?;
+                            let expr = &xs[1];
+                            Ok(StutterObject::Lambda(
+                                params_as_string,
+                                expr.clone(),
+                            ))
+                        }
                     }
-                    _ => eval_branch(&op, &xs, &env, global_env),
+                    _ => {
+                        if fully_eval_lambda {
+                            eval_branch(&op, &xs, &env, global_env)
+                        } else {
+                            Err(String::from("could not evaluate branch"))
+                        }
+                    }
                 }
             }
         }
@@ -880,3 +890,4 @@ fn main() {
 // (def f (lambda (x y z) (+ x y z)))
 // (if (= 0 0) (+ 1 2) (- 3 4))
 // (let (myfunc (lambda (myvar) (> myvar 5))) (filter myfunc (list 3 3 54 54 3 2 4 4325 4365 3645)))
+// (map (lambda (x) (+ 1 x)) (range 0 10))
