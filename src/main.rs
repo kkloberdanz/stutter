@@ -17,6 +17,7 @@ use rpds::HashTrieMap;
 use std::collections::HashMap;
 use std::io;
 use std::io::Write;
+use std::fs;
 
 enum Input {
     Quit,
@@ -807,9 +808,46 @@ fn run(
     }
 }
 
+fn read_stdlib(
+    global_env: &mut HashMap<String, StutterObject>,
+) -> Result<StutterObject, String> {
+    let filename = "stdlib.lisp";
+    let contents = fs::read_to_string(filename)
+        .expect("failed to read stdlib");
+
+    let mut num_lparen = 0;
+    let mut num_rparen = 0;
+    let mut expr = String::new();
+    let mut in_comment = false;
+    for c in contents.chars() {
+        if c == '(' {
+            num_lparen += 1;
+            expr.push(c);
+        } else if c == ')' {
+            num_rparen += 1;
+            expr.push(c);
+            if num_lparen == num_rparen {
+                num_lparen = 0;
+                num_rparen = 0;
+                let _result = run(&expr, global_env)?;
+                expr = String::new();
+            }
+        } else if (c == ';') {
+            in_comment = true;
+        }else if c == '\n' {
+            in_comment = false;
+        } else {
+            expr.push(c);
+        }
+    }
+    Ok(StutterObject::Nil)
+}
+
 fn main() {
     let prompt = String::from("λ ");
     let mut global_env = HashMap::new();
+    let res = read_stdlib(&mut global_env);
+    println!("{:?}", res);
     loop {
         // Read
         let cmd = prompt_user(&prompt);
