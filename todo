@@ -11,3 +11,5 @@ DONE 4) implement standard library
 6) automated tests
 
 DONE 7) anonomous functions
+
+8) replace integers with ramp ints for arbitrary precision integers
