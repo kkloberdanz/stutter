@@ -111,7 +111,15 @@ impl fmt::Display for StutterObject {
             StutterObject::Nil => write!(f, "Nil"),
             StutterObject::Int(i) => write!(f, "{}", i.to_string()),
             StutterObject::Dec(d) => write!(f, "{}", d.to_string()),
-            StutterObject::Bool(b) => write!(f, "{}", b.to_string()),
+            StutterObject::Bool(b) => write!(
+                f,
+                "{}",
+                if *b {
+                    String::from("True")
+                } else {
+                    String::from("False")
+                }
+            ),
             StutterObject::Id(s) => write!(f, "{}", s),
             StutterObject::Lambda(_l, _tree) => write!(f, "{}", "<lambda>"),
             StutterObject::List(vec) => {
@@ -418,7 +426,7 @@ fn bigint_to_usize(n: &BigInt) -> Result<usize, String> {
     let opt_usize = n.to_usize();
     match opt_usize {
         Some(us) => Ok(us),
-        None => Err(String::from("failed to represent BigInt as usize")),
+        None => Err(format!("failed to represent BigInt as usize: {:?}", n)),
     }
 }
 
