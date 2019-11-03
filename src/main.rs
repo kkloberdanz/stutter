@@ -128,10 +128,10 @@ impl fmt::Display for StutterObject {
                     if string.len() == 0 {
                         string = format!("{}", item);
                     } else {
-                        string = format!("{}, {}", string, item);
+                        string = format!("{} {}", string, item);
                     }
                 }
-                write!(f, "[{}]", string)
+                write!(f, "(list {})", string)
             }
         }
     }
