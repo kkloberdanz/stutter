@@ -13,6 +13,13 @@
 // You should have received a copy of the GNU General Public License
 // along with Stutter.  If not, see <https://www.gnu.org/licenses/>.
 
+extern crate num_bigint;
+extern crate num_traits;
+
+use num_bigint::BigInt;
+use crate::num_bigint::ToBigInt;
+use num_traits::cast::ToPrimitive;
+use num_traits::pow;
 use rpds::HashTrieMap;
 use std::collections::HashMap;
 use std::fs;
@@ -51,7 +58,7 @@ enum Token {
     Len,
     Take,
     If,
-    Int(i128),
+    Int(BigInt),
     Dec(f64),
     Bool(bool),
     Id(String),
@@ -87,7 +94,7 @@ enum Op {
 #[derive(Clone, Debug, PartialEq)]
 enum StutterObject {
     Nil,
-    Int(i128),
+    Int(BigInt),
     Dec(f64),
     Bool(bool),
     Id(String),
@@ -107,7 +114,7 @@ enum Production {
     Tok(Token),
 }
 
-fn count_chars(s: &String, c: char) -> i128 {
+fn count_chars(s: &String, c: char) -> i64 {
     let mut acc = 0;
     for letter in s.chars() {
         if letter == c {
@@ -141,7 +148,8 @@ fn prompt_user(prompt: &String) -> Input {
 }
 
 fn to_token(s: &String) -> Token {
-    if let Ok(t) = s.parse::<i128>() {
+    let bytes = s.as_bytes();
+    if let Some(t) = BigInt::parse_bytes(bytes, 10) {
         Token::Int(t)
     } else if let Ok(t) = s.parse::<f64>() {
         Token::Dec(t)
@@ -181,7 +189,7 @@ fn to_token(s: &String) -> Token {
 fn token_to_stutterobject(tok: &Token) -> Result<StutterObject, String> {
     match tok {
         Token::Id(s) => Ok(StutterObject::Id(s.to_string())),
-        Token::Int(i) => Ok(StutterObject::Int(*i)),
+        Token::Int(i) => Ok(StutterObject::Int(i.clone())),
         Token::Dec(f) => Ok(StutterObject::Dec(*f)),
         Token::Bool(b) => Ok(StutterObject::Bool(*b)),
         _ => Err(format!("token: {:?} does not form a valid atom", tok)),
@@ -369,6 +377,30 @@ fn lookup_env_string(
     }
 }
 
+fn bigint_to_f64(n: &BigInt) -> Result<f64, String> {
+    let opt_f = n.to_f64();
+    match opt_f {
+        Some(f) => Ok(f),
+        None => Err(String::from("failed to represent BigInt as f64"))
+    }
+}
+
+fn bigint_to_usize(n: &BigInt) -> Result<usize, String> {
+    let opt_usize = n.to_usize();
+    match opt_usize {
+        Some(us) => Ok(us),
+        None => Err(String::from("failed to represent BigInt as usize"))
+    }
+}
+
+fn usize_to_bigint(n: usize) -> Result<BigInt, String> {
+    let opt_bi = n.to_bigint();
+    match opt_bi {
+        Some(bi) => Ok(bi),
+        None => Err(String::from("failed to represent usize as BigInt"))
+    }
+}
+
 fn apply_op(
     op: &Op,
     acc: &StutterObject,
@@ -384,7 +416,7 @@ fn apply_op(
             Op::Sub => Ok(StutterObject::Int(n1 - n2)),
             Op::Div => Ok(StutterObject::Int(n1 / n2)),
             Op::Mod => Ok(StutterObject::Int(n1 % n2)),
-            Op::Pow => Ok(StutterObject::Int(n1.pow(n2 as u32))),
+            Op::Pow => Ok(StutterObject::Int(pow(n1, bigint_to_usize(&n2)?))),
             Op::Mul => Ok(StutterObject::Int(n1 * n2)),
             Op::Gt => Ok(StutterObject::Bool(n1 > n2)),
             Op::Lt => Ok(StutterObject::Bool(n1 < n2)),
@@ -408,31 +440,31 @@ fn apply_op(
             _ => Err(format!("{:?} not implemented", op)),
         },
         (StutterObject::Int(n1), StutterObject::Dec(f2)) => match op {
-            Op::Add => Ok(StutterObject::Dec((n1 as f64) + f2)),
-            Op::Sub => Ok(StutterObject::Dec((n1 as f64) - f2)),
-            Op::Div => Ok(StutterObject::Dec((n1 as f64) / f2)),
-            Op::Mod => Ok(StutterObject::Dec((n1 as f64) % f2)),
-            Op::Pow => Ok(StutterObject::Dec((n1 as f64).powf(f2))),
-            Op::Mul => Ok(StutterObject::Dec((n1 as f64) * f2)),
-            Op::Gt => Ok(StutterObject::Bool((n1 as f64) > f2)),
-            Op::Lt => Ok(StutterObject::Bool((n1 as f64) < f2)),
-            Op::Eq => Ok(StutterObject::Bool((n1 as f64) == f2)),
-            Op::Gte => Ok(StutterObject::Bool((n1 as f64) >= f2)),
-            Op::Lte => Ok(StutterObject::Bool((n1 as f64) <= f2)),
+            Op::Add => Ok(StutterObject::Dec((bigint_to_f64(&n1)?) + f2)),
+            Op::Sub => Ok(StutterObject::Dec((bigint_to_f64(&n1)?) - f2)),
+            Op::Div => Ok(StutterObject::Dec((bigint_to_f64(&n1)?) / f2)),
+            Op::Mod => Ok(StutterObject::Dec((bigint_to_f64(&n1)?) % f2)),
+            Op::Pow => Ok(StutterObject::Dec((bigint_to_f64(&n1)?).powf(f2))),
+            Op::Mul => Ok(StutterObject::Dec((bigint_to_f64(&n1)?) * f2)),
+            Op::Gt => Ok(StutterObject::Bool((bigint_to_f64(&n1)?) > f2)),
+            Op::Lt => Ok(StutterObject::Bool((bigint_to_f64(&n1)?) < f2)),
+            Op::Eq => Ok(StutterObject::Bool((bigint_to_f64(&n1)?) == f2)),
+            Op::Gte => Ok(StutterObject::Bool((bigint_to_f64(&n1)?) >= f2)),
+            Op::Lte => Ok(StutterObject::Bool((bigint_to_f64(&n1)?) <= f2)),
             _ => Err(format!("{:?} not implemented", op)),
         },
         (StutterObject::Dec(f1), StutterObject::Int(n2)) => match op {
-            Op::Add => Ok(StutterObject::Dec(f1 + (n2 as f64))),
-            Op::Sub => Ok(StutterObject::Dec(f1 - (n2 as f64))),
-            Op::Div => Ok(StutterObject::Dec(f1 / (n2 as f64))),
-            Op::Mod => Ok(StutterObject::Dec(f1 % (n2 as f64))),
-            Op::Pow => Ok(StutterObject::Dec(f1.powf(n2 as f64))),
-            Op::Mul => Ok(StutterObject::Dec(f1 * (n2 as f64))),
-            Op::Gt => Ok(StutterObject::Bool(f1 > (n2 as f64))),
-            Op::Lt => Ok(StutterObject::Bool(f1 < (n2 as f64))),
-            Op::Eq => Ok(StutterObject::Bool(f1 == (n2 as f64))),
-            Op::Gte => Ok(StutterObject::Bool(f1 >= (n2 as f64))),
-            Op::Lte => Ok(StutterObject::Bool(f1 <= (n2 as f64))),
+            Op::Add => Ok(StutterObject::Dec(f1 + (bigint_to_f64(&n2)?))),
+            Op::Sub => Ok(StutterObject::Dec(f1 - (bigint_to_f64(&n2)?))),
+            Op::Div => Ok(StutterObject::Dec(f1 / (bigint_to_f64(&n2)?))),
+            Op::Mod => Ok(StutterObject::Dec(f1 % (bigint_to_f64(&n2)?))),
+            Op::Pow => Ok(StutterObject::Dec(f1.powf(bigint_to_f64(&n2)?))),
+            Op::Mul => Ok(StutterObject::Dec(f1 * (bigint_to_f64(&n2)?))),
+            Op::Gt => Ok(StutterObject::Bool(f1 > (bigint_to_f64(&n2)?))),
+            Op::Lt => Ok(StutterObject::Bool(f1 < (bigint_to_f64(&n2)?))),
+            Op::Eq => Ok(StutterObject::Bool(f1 == (bigint_to_f64(&n2)?))),
+            Op::Gte => Ok(StutterObject::Bool(f1 >= (bigint_to_f64(&n2)?))),
+            Op::Lte => Ok(StutterObject::Bool(f1 <= (bigint_to_f64(&n2)?))),
             _ => Err(format!("{:?} not implemented", op)),
         },
         _ => {
@@ -688,7 +720,7 @@ fn eval_branch(
             let list = &v[1];
             match (i, list) {
                 (StutterObject::Int(n), StutterObject::List(l)) => {
-                    let size: usize = *n as usize;
+                    let size: usize = bigint_to_usize(&n)?;
                     Ok(l[size].clone())
                 }
                 _ => Err(String::from(
@@ -702,7 +734,7 @@ fn eval_branch(
             let list = &v[1];
             match (i, list) {
                 (StutterObject::Int(n), StutterObject::List(l)) => {
-                    let size: usize = *n as usize;
+                    let size: usize = bigint_to_usize(&n)?;
                     Ok(StutterObject::List(l[..size].to_vec()))
                 }
                 _ => Err(String::from(
@@ -716,7 +748,7 @@ fn eval_branch(
             let list = &v[1];
             match (i, list) {
                 (StutterObject::Int(n), StutterObject::List(l)) => {
-                    let size: usize = *n as usize;
+                    let size: usize = bigint_to_usize(&n)?;
                     Ok(StutterObject::List(l[size..].to_vec()))
                 }
                 _ => Err(String::from(
@@ -762,7 +794,7 @@ fn eval_branch(
             let list = &v[0];
             match list {
                 StutterObject::List(l) => {
-                    let len: i128 = l.len() as i128;
+                    let len: BigInt = usize_to_bigint(l.len())?;
                     Ok(StutterObject::Int(len))
                 }
                 _ => Err(String::from("type error: expected form (len LIST)")),

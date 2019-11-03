@@ -7,3 +7,5 @@ edition = "2018"
 [dependencies]
 rayon = "1.0"
 rpds = "0.6.0"
+num-bigint = "0.2"
+num-traits = "0.2"
