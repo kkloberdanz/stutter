@@ -16,13 +16,13 @@
 extern crate num_bigint;
 extern crate num_traits;
 
-use std::fmt;
-use num_bigint::BigInt;
 use crate::num_bigint::ToBigInt;
+use num_bigint::BigInt;
 use num_traits::cast::ToPrimitive;
 use num_traits::pow;
 use rpds::HashTrieMap;
 use std::collections::HashMap;
+use std::fmt;
 use std::fs;
 use std::io;
 use std::io::Write;
@@ -55,6 +55,7 @@ enum Token {
     Drop,
     Quote,
     Append,
+    Range,
     Cat,
     Len,
     Take,
@@ -85,6 +86,7 @@ enum Op {
     Drop,
     Quote,
     Append,
+    Range,
     Cat,
     Len,
     Take,
@@ -105,25 +107,25 @@ enum StutterObject {
 
 impl fmt::Display for StutterObject {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-       match &*self {
-           StutterObject::Nil => write!(f, "Nil"),
-           StutterObject::Int(i) => write!(f, "{}", i.to_string()),
-           StutterObject::Dec(d) => write!(f, "{}", d.to_string()),
-           StutterObject::Bool(b) => write!(f, "{}", b.to_string()),
-           StutterObject::Id(s) => write!(f, "{}", s),
-           StutterObject::Lambda(_l, _tree) => write!(f, "{}", "<lambda>"),
-           StutterObject::List(vec) => {
-               let mut string = String::new();
-               for item in vec.iter() {
-                   if string.len() == 0 {
-                       string = format!("{}", item);
-                   } else {
-                       string = format!("{}, {}", string, item);
-                   }
-               }
-               write!(f, "[{}]", string)
-           },
-       }
+        match &*self {
+            StutterObject::Nil => write!(f, "Nil"),
+            StutterObject::Int(i) => write!(f, "{}", i.to_string()),
+            StutterObject::Dec(d) => write!(f, "{}", d.to_string()),
+            StutterObject::Bool(b) => write!(f, "{}", b.to_string()),
+            StutterObject::Id(s) => write!(f, "{}", s),
+            StutterObject::Lambda(_l, _tree) => write!(f, "{}", "<lambda>"),
+            StutterObject::List(vec) => {
+                let mut string = String::new();
+                for item in vec.iter() {
+                    if string.len() == 0 {
+                        string = format!("{}", item);
+                    } else {
+                        string = format!("{}, {}", string, item);
+                    }
+                }
+                write!(f, "[{}]", string)
+            }
+        }
     }
 }
 
@@ -204,6 +206,7 @@ fn to_token(s: &String) -> Token {
             "drop" => Token::Drop,
             "quote" => Token::Quote,
             "append" => Token::Append,
+            "range" => Token::Range,
             "cat" => Token::Cat,
             "len" => Token::Len,
             _ => Token::Id(s.to_string()),
@@ -243,6 +246,7 @@ fn token_to_op(tok: &Token) -> Result<Op, String> {
         Token::Drop => Ok(Op::Drop),
         Token::Quote => Ok(Op::Quote),
         Token::Append => Ok(Op::Append),
+        Token::Range => Ok(Op::Range),
         Token::Cat => Ok(Op::Cat),
         Token::Len => Ok(Op::Len),
         Token::Id(s) => Ok(Op::Func(s.to_string())),
@@ -406,7 +410,7 @@ fn bigint_to_f64(n: &BigInt) -> Result<f64, String> {
     let opt_f = n.to_f64();
     match opt_f {
         Some(f) => Ok(f),
-        None => Err(String::from("failed to represent BigInt as f64"))
+        None => Err(String::from("failed to represent BigInt as f64")),
     }
 }
 
@@ -414,7 +418,7 @@ fn bigint_to_usize(n: &BigInt) -> Result<usize, String> {
     let opt_usize = n.to_usize();
     match opt_usize {
         Some(us) => Ok(us),
-        None => Err(String::from("failed to represent BigInt as usize"))
+        None => Err(String::from("failed to represent BigInt as usize")),
     }
 }
 
@@ -422,7 +426,7 @@ fn usize_to_bigint(n: usize) -> Result<BigInt, String> {
     let opt_bi = n.to_bigint();
     match opt_bi {
         Some(bi) => Ok(bi),
-        None => Err(String::from("failed to represent usize as BigInt"))
+        None => Err(String::from("failed to represent usize as BigInt")),
     }
 }
 
@@ -793,6 +797,26 @@ fn eval_branch(
                 }
                 _ => Err(String::from(
                     "type error: expected form (append ITEM LIST)",
+                )),
+            }
+        }
+        Op::Range => {
+            let v = resolve_exprs(&xs, &env, global_env)?;
+            let lower_bound = &v[0];
+            let upper_bound = &v[1];
+            let mut vec = Vec::new();
+            match (lower_bound, upper_bound) {
+                (StutterObject::Int(bi1), StutterObject::Int(bi2)) => {
+                    let i1 = bigint_to_usize(bi1)?;
+                    let i2 = bigint_to_usize(bi2)?;
+                    for i in i1..i2 {
+                        vec.push(StutterObject::Int(usize_to_bigint(i)?));
+                    }
+                    Ok(StutterObject::List(vec))
+                }
+                _ => Err(format!(
+                    "unsupported types for range: {:?}, {:?}",
+                    lower_bound, upper_bound
                 )),
             }
         }

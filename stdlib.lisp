@@ -43,16 +43,6 @@
 
 (def filter (lambda (f l) (rec-filter f l (list))))
 
-(def rec-range
-  (lambda (begin end l)
-    (if (< begin end)
-      (rec-range (+ 1 begin) end (append begin l))
-      l)))
-
-(def range
-  (lambda (begin end)
-    (rec-range begin end (list))))
-
 (def reduce
   (lambda (f acc l)
     (if (empty l)
