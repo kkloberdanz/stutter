@@ -2,12 +2,12 @@ DONE 1) boolean expressions
 
 DONE 2) if expressions
 
-3) reading in standard library at startup
+DONE 3) reading in standard library at startup
 
-4) implement standard library
+DONE 4) implement standard library
 
 5) strings
 
 6) automated tests
 
-7) anonomous functions
+DONE 7) anonomous functions
