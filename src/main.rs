@@ -910,8 +910,7 @@ fn read_stdlib(
 fn main() {
     let prompt = String::from("λ ");
     let mut global_env = HashMap::new();
-    let res = read_stdlib(&mut global_env);
-    println!("{:?}", res);
+    read_stdlib(&mut global_env).unwrap();
     loop {
         // Read
         let cmd = prompt_user(&prompt);
