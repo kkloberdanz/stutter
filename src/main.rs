@@ -46,6 +46,7 @@ enum Token {
     Drop,
     Quote,
     Append,
+    Cat,
     Len,
     Take,
     If,
@@ -74,6 +75,7 @@ enum Op {
     Drop,
     Quote,
     Append,
+    Cat,
     Len,
     Take,
     If,
@@ -166,6 +168,7 @@ fn to_token(s: &String) -> Token {
             "drop" => Token::Drop,
             "quote" => Token::Quote,
             "append" => Token::Append,
+            "cat" => Token::Cat,
             "len" => Token::Len,
             _ => Token::Id(s.to_string()),
         }
@@ -203,6 +206,7 @@ fn token_to_op(tok: &Token) -> Result<Op, String> {
         Token::Drop => Ok(Op::Drop),
         Token::Quote => Ok(Op::Quote),
         Token::Append => Ok(Op::Append),
+        Token::Cat => Ok(Op::Cat),
         Token::Len => Ok(Op::Len),
         Token::Id(s) => Ok(Op::Func(s.to_string())),
         _ => Err(format!("invalid op: {:?}", tok)),
@@ -700,6 +704,21 @@ fn eval_branch(
                 )),
             }
         }
+        Op::Cat => {
+            let v = resolve_exprs(&xs, &env, global_env)?;
+            let list1 = &v[0];
+            let list2 = &v[1];
+            match (list1, list2) {
+                (StutterObject::List(vec1), StutterObject::List(vec2)) => {
+                    let mut vec = vec1.clone();
+                    vec.append(&mut vec2.clone());
+                    Ok(StutterObject::List(vec))
+                }
+                _ => Err(String::from(
+                    "type error: expected form (append ITEM LIST)",
+                )),
+            }
+        }
         Op::Len => {
             let v = resolve_exprs(&xs, &env, global_env)?;
             let list = &v[0];
@@ -765,34 +784,25 @@ fn eval(
     fully_eval_lambda: bool,
 ) -> Result<StutterObject, String> {
     match tree {
-        ParseTree::Branch(op, xs) => {
-            if false {
-                eval_branch(&op, &xs, &env, global_env)
-            } else {
-                match op {
-                    Op::Func(s) => {
-                        if fully_eval_lambda && s != "lambda" {
-                            eval_branch(&op, &xs, &env, global_env)
-                        } else {
-                            let params = &xs[0];
-                            let params_as_string = params_to_string(&params)?;
-                            let expr = &xs[1];
-                            Ok(StutterObject::Lambda(
-                                params_as_string,
-                                expr.clone(),
-                            ))
-                        }
-                    }
-                    _ => {
-                        if fully_eval_lambda {
-                            eval_branch(&op, &xs, &env, global_env)
-                        } else {
-                            Err(String::from("could not evaluate branch"))
-                        }
-                    }
+        ParseTree::Branch(op, xs) => match op {
+            Op::Func(s) => {
+                if fully_eval_lambda && s != "lambda" {
+                    eval_branch(&op, &xs, &env, global_env)
+                } else {
+                    let params = &xs[0];
+                    let params_as_string = params_to_string(&params)?;
+                    let expr = &xs[1];
+                    Ok(StutterObject::Lambda(params_as_string, expr.clone()))
                 }
             }
-        }
+            _ => {
+                if fully_eval_lambda {
+                    eval_branch(&op, &xs, &env, global_env)
+                } else {
+                    Err(String::from("could not evaluate branch"))
+                }
+            }
+        },
         ParseTree::Leaf(tok) => {
             let obj = token_to_stutterobject(&tok)?;
             match obj {
