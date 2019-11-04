@@ -430,7 +430,23 @@ fn bigint_to_usize(n: &BigInt) -> Result<usize, String> {
     }
 }
 
+fn bigint_to_i64(n: &BigInt) -> Result<i64, String> {
+    let opt_usize = n.to_i64();
+    match opt_usize {
+        Some(us) => Ok(us),
+        None => Err(format!("failed to represent BigInt as usize: {:?}", n)),
+    }
+}
+
 fn usize_to_bigint(n: usize) -> Result<BigInt, String> {
+    let opt_bi = n.to_bigint();
+    match opt_bi {
+        Some(bi) => Ok(bi),
+        None => Err(String::from("failed to represent usize as BigInt")),
+    }
+}
+
+fn i64_to_bigint(n: i64) -> Result<BigInt, String> {
     let opt_bi = n.to_bigint();
     match opt_bi {
         Some(bi) => Ok(bi),
@@ -815,10 +831,10 @@ fn eval_branch(
             let mut vec = Vec::new();
             match (lower_bound, upper_bound) {
                 (StutterObject::Int(bi1), StutterObject::Int(bi2)) => {
-                    let i1 = bigint_to_usize(bi1)?;
-                    let i2 = bigint_to_usize(bi2)?;
+                    let i1 = bigint_to_i64(bi1)?;
+                    let i2 = bigint_to_i64(bi2)?;
                     for i in i1..i2 {
-                        vec.push(StutterObject::Int(usize_to_bigint(i)?));
+                        vec.push(StutterObject::Int(i64_to_bigint(i)?));
                     }
                     Ok(StutterObject::List(vec))
                 }
