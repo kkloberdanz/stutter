@@ -689,7 +689,7 @@ fn eval_def(
     }
     let name = unpack_string_from_leaf(&xs[0])?;
     let expr = &xs[1];
-    let value = eval(&expr, &env, global_env, false)?;
+    let value = eval(&expr, &env, global_env, true)?;
     Ok((name, value))
 }
 
