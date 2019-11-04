@@ -57,15 +57,13 @@
   (lambda (l)
     (reduce mul 1 l)))
 
-(def rec-zip
-  (lambda (l1 l2 acc)
-    (if (or (empty l1) (empty l2))
-      acc
-      (rec-zip (tail l1) (tail l2) (append (list (head l1) (head l2)) acc)))))
-
 (def zip
   (lambda (l1 l2)
-    (rec-zip l1 l2 (list))))
+    (let (rec-zip (lambda (l1 l2 acc)
+      (if (or (empty l1) (empty l2))
+        acc
+        (rec-zip (tail l1) (tail l2) (append (list (head l1) (head l2)) acc)))))
+      (rec-zip l1 l2 (list)))))
 
 (def collatz
   (lambda (x)
@@ -85,29 +83,25 @@
   (lambda (n)
     (rec-fibonacci n 0 (list 1))))
 
-(def rec-isprime
-  (lambda (x acc max_num)
-    (if (>= acc max_num)
-      True
-      (if (= 0 (mod x acc))
-        False
-        (rec-isprime x (+ 1 acc) max_num)))))
-
 (def isprime
   (lambda (x)
     (if (<= x 1)
       False
-      (rec-isprime x 2 (+ 1 (sqrt x))))))
-
-(def rec-map
-  (lambda (f l a)
-    (if (empty l)
-      a
-      (rec-map f (tail l) (append (f (head l)) a)))))
+      (let (rec-isprime (lambda (x acc max_num)
+        (if (>= acc max_num)
+          True
+          (if (= 0 (mod x acc))
+            False
+            (rec-isprime x (+ 1 acc) max_num)))))
+        (rec-isprime x 2 (+ 1 (sqrt x)))))))
 
 (def map
   (lambda (f l)
-    (rec-map f l (list))))
+    (let (rec-map (lambda (f l a)
+      (if (empty l)
+        a
+        (rec-map f (tail l) (append (f (head l)) a)))))
+    (rec-map f l (list)))))
 
 (def quicksort
   (lambda (mylist)
