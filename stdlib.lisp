@@ -62,7 +62,10 @@
     (let (rec-zip (lambda (l1 l2 acc)
       (if (or (empty l1) (empty l2))
         acc
-        (rec-zip (tail l1) (tail l2) (append (list (head l1) (head l2)) acc)))))
+        (rec-zip
+          (tail l1)
+          (tail l2)
+          (append (list (head l1) (head l2)) acc)))))
       (rec-zip l1 l2 (list)))))
 
 (def collatz
