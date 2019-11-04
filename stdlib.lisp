@@ -33,15 +33,15 @@
       (False)
       (True))))
 
-(def rec-filter
-  (lambda (f l acc)
-    (if (empty l)
-    (acc)
-    (if (f (head l))
-      (rec-filter f (tail l) (append (head l) acc))
-      (rec-filter f (tail l) acc)))))
-
-(def filter (lambda (f l) (rec-filter f l (list))))
+(def filter
+  (lambda (f l)
+    (let (rec-filter (lambda (f l acc)
+      (if (empty l)
+      (acc)
+      (if (f (head l))
+        (rec-filter f (tail l) (append (head l) acc))
+        (rec-filter f (tail l) acc)))))
+      (rec-filter f l (list)))))
 
 (def reduce
   (lambda (f acc l)
