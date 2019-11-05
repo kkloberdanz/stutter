@@ -38,9 +38,9 @@
     (let (rec-filter (lambda (f l acc)
       (if (empty l)
       (acc)
-      (if (f (head l))
-        (rec-filter f (tail l) (append (head l) acc))
-        (rec-filter f (tail l) acc)))))
+        (if (f (head l))
+          (rec-filter f (tail l) (append (head l) acc))
+          (rec-filter f (tail l) acc)))))
       (rec-filter f l (list)))))
 
 (def reduce
@@ -76,15 +76,17 @@
         (append x (collatz (/ x 2)))
         (append x (collatz (+ 1 (* 3 x))))))))
 
-(def rec-fibonacci
-  (lambda (max_n i acc_l)
-    (if (= max_n i)
-      acc_l
-      (rec-fibonacci max_n (+ i 1) (append (sum (last_n 2 acc_l)) acc_l)))))
-
 (def fibonacci
   (lambda (n)
-    (rec-fibonacci n 0 (list 1))))
+    (let (rec-fibonacci
+      (lambda (max-n counter acc)
+        (if (= max-n counter)
+          acc
+          (rec-fibonacci
+            max-n
+            (+ 1 counter)
+            (append (sum (last_n 2 acc)) acc)))))
+      (rec-fibonacci n 0 (list 1)))))
 
 (def isprime
   (lambda (x)

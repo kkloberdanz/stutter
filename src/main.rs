@@ -434,7 +434,7 @@ fn bigint_to_i64(n: &BigInt) -> Result<i64, String> {
     let opt_usize = n.to_i64();
     match opt_usize {
         Some(us) => Ok(us),
-        None => Err(format!("failed to represent BigInt as usize: {:?}", n)),
+        None => Err(format!("failed to represent BigInt as i64: {:?}", n)),
     }
 }
 
