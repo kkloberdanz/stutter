@@ -35,6 +35,17 @@
       (False)
       (True))))
 
+;(def filter
+;  (lambda (f l)
+;    (let (rec-filter (lambda (f l acc)
+;      (if (empty l)
+;        acc
+;        (let (x (head l)) (xs (tail l))
+;          (if (f x)
+;            (rec-filter f xs (append x acc))
+;            (rec-filter f xs acc))))))
+;      (rec-filter f l (list)))))
+
 (def filter
   (lambda (f l)
     (let (rec-filter (lambda (f l acc)
