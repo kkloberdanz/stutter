@@ -35,25 +35,15 @@
       (False)
       (True))))
 
-;(def filter
-;  (lambda (f l)
-;    (let (rec-filter (lambda (f l acc)
-;      (if (empty l)
-;        acc
-;        (let (x (head l)) (xs (tail l))
-;          (if (f x)
-;            (rec-filter f xs (append x acc))
-;            (rec-filter f xs acc))))))
-;      (rec-filter f l (list)))))
-
 (def filter
   (lambda (f l)
     (let (rec-filter (lambda (f l acc)
       (if (empty l)
-      (acc)
-        (if (f (head l))
-          (rec-filter f (tail l) (append (head l) acc))
-          (rec-filter f (tail l) acc)))))
+        acc
+        (let (x (head l)) (xs (tail l))
+          (if (f x)
+            (rec-filter f xs (append x acc))
+            (rec-filter f xs acc))))))
       (rec-filter f l (list)))))
 
 (def reduce
@@ -128,3 +118,10 @@
            (list (head mylist))
            (quicksort (filter (lambda (x) (>= x (head mylist)))
                               (tail mylist)))))))
+
+
+(def f
+  (lambda (x)
+    (let (y (head (list 3))) (z (add 5 6))
+      (let (w 8)
+        (+ x y w)))))

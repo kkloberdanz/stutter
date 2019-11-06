@@ -650,7 +650,6 @@ fn eval_let(
                     if val_vec.len() != 1 {
                         Err(format!("syntax error: {:?}", val_vec))
                     } else {
-                        /* TODO: there should be a for loop here to eval each expr in val_vec */
                         match &val_vec[0] {
                             ParseTree::Branch(Op::List, xs) => {
                                 let v: Result<Vec<StutterObject>, String> = xs
@@ -666,12 +665,11 @@ fn eval_let(
                                 );
                                 return eval(&expr, &env, global_env, true);
                             }
-                            /* TODO: eval val_vec here */
                             ParseTree::Branch(func, sub_expr) => {
-                                let value = eval(&val_vec[0], &env, global_env, true)?;
-                                let env = env.insert(name.to_string(), value);
-                                return eval(&expr, &env, global_env, true);
-                            },
+                                let value =
+                                    eval(&val_vec[0], &env, global_env, true)?;
+                                Ok((name.to_string(), value))
+                            }
                             _ => eval_lambda_params(
                                 &name,
                                 &val_vec[0],
