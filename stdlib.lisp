@@ -81,14 +81,13 @@
 (def fibonacci
   (lambda (n)
     (let (rec-fibonacci
-      (lambda (max-n counter acc)
-        (if (= max-n counter)
-          (tail (tail (tail acc)))
-          (rec-fibonacci
-            max-n
-            (+ 1 counter)
-            (append (sum (last_n 2 acc)) acc)))))
-      (rec-fibonacci n 0 (list 1 1)))))
+      (lambda (acc)
+        (if (< n (len acc))
+          (tail acc)
+          (if (> (len acc) 2)
+            (rec-fibonacci (append (sum (last_n 2 acc)) acc))
+            (rec-fibonacci (append 1 acc))))))
+      (rec-fibonacci (list)))))
 
 (def isprime
   (lambda (x)
