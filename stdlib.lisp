@@ -10,6 +10,8 @@
 (def mod (lambda (x y) (% x y)))
 (def sqrt (lambda (x) (pow x 0.5)))
 (def last_n (lambda (n l) (drop (- (len l) n) l)))
+(def even (lambda (x) (= 0 (mod x 2))))
+(def odd (lambda (x) (= 1 (mod x 2))))
 
 (def or
   (lambda (x y)
@@ -73,20 +75,20 @@
     (if (= 1 x)
       (list 1)
       (if (= 0 (mod x 2))
-        (append x (collatz (/ x 2)))
-        (append x (collatz (+ 1 (* 3 x))))))))
+        (cat (list x) (collatz (/ x 2)))
+        (cat (list x) (collatz (+ 1 (* 3 x))))))))
 
 (def fibonacci
   (lambda (n)
     (let (rec-fibonacci
       (lambda (max-n counter acc)
         (if (= max-n counter)
-          acc
+          (tail (tail (tail acc)))
           (rec-fibonacci
             max-n
             (+ 1 counter)
             (append (sum (last_n 2 acc)) acc)))))
-      (rec-fibonacci n 0 (list 1)))))
+      (rec-fibonacci n 0 (list 1 1)))))
 
 (def isprime
   (lambda (x)

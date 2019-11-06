@@ -801,8 +801,13 @@ fn eval_branch(
             let list = &v[1];
             match (i, list) {
                 (StutterObject::Int(n), StutterObject::List(l)) => {
-                    let size: usize = bigint_to_usize(&n)?;
-                    Ok(StutterObject::List(l[size..].to_vec()))
+                    let big_zero: BigInt = 0.to_bigint().unwrap();
+                    if n <= &big_zero {
+                        Ok(StutterObject::List(Vec::new()))
+                    } else {
+                        let size: usize = bigint_to_usize(&n)?;
+                        Ok(StutterObject::List(l[size..].to_vec()))
+                    }
                 }
                 _ => Err(String::from(
                     "type error: expected form (drop NUM LIST)",
@@ -828,15 +833,19 @@ fn eval_branch(
             let v = resolve_exprs(&xs, &env, global_env)?;
             let lower_bound = &v[0];
             let upper_bound = &v[1];
-            let mut vec = Vec::new();
             match (lower_bound, upper_bound) {
                 (StutterObject::Int(bi1), StutterObject::Int(bi2)) => {
+                    if bi1 >= bi2 {
+                        return Ok(StutterObject::List(Vec::new()));
+                    }
+                    let mut vector =
+                        Vec::with_capacity(bigint_to_usize(&(bi2 - bi1))?);
                     let i1 = bigint_to_i64(bi1)?;
                     let i2 = bigint_to_i64(bi2)?;
                     for i in i1..i2 {
-                        vec.push(StutterObject::Int(i64_to_bigint(i)?));
+                        vector.push(StutterObject::Int(i64_to_bigint(i)?));
                     }
-                    Ok(StutterObject::List(vec))
+                    Ok(StutterObject::List(vector))
                 }
                 _ => Err(format!(
                     "unsupported types for range: {:?}, {:?}",
