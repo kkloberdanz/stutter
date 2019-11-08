@@ -665,7 +665,7 @@ fn eval_let(
                                 );
                                 return eval(&expr, &env, global_env, true);
                             }
-                            ParseTree::Branch(func, sub_expr) => {
+                            ParseTree::Branch(_func, _sub_expr) => {
                                 let value =
                                     eval(&val_vec[0], &env, global_env, true)?;
                                 Ok((name.to_string(), value))
@@ -901,7 +901,7 @@ fn eval_branch(
                     StutterObject::Bool(true) => Ok(true_path),
                     StutterObject::Bool(false) => Ok(false_path),
                     _ => Err(format!(
-                        "expecting boolean expression, got {:?}",
+                        "expecting boolean expression, got {}",
                         condition
                     )),
                 }?;

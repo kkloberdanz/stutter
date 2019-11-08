@@ -119,9 +119,8 @@
            (quicksort (filter (lambda (x) (>= x (head mylist)))
                               (tail mylist)))))))
 
-
 (def f
   (lambda (x)
     (let (y (head (list 3))) (z (add 5 6))
       (let (w 8)
-        (+ x y w)))))
+        (+ w x y z)))))
