@@ -131,7 +131,7 @@ impl fmt::Display for StutterObject {
                         string = format!("{} {}", string, item);
                     }
                 }
-                write!(f, "(list {})", string)
+                write!(f, "({})", string)
             }
         }
     }
