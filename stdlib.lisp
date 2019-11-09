@@ -12,6 +12,7 @@
 (def last_n (lambda (n l) (drop (- (len l) n) l)))
 (def even (lambda (x) (= 0 (mod x 2))))
 (def odd (lambda (x) (= 1 (mod x 2))))
+(def last (lambda (l) (index (- (len l) 1) l)))
 
 (def or
   (lambda (x y)
