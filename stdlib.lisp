@@ -125,3 +125,9 @@
     (let (y (head (list 3))) (z (add 5 6))
       (let (w 8)
         (+ w x y z)))))
+
+(def gcd
+  (lambda (a b)
+    (if (= 0 b)
+      a
+      (gcd b (mod a b)))))
