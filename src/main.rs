@@ -988,7 +988,8 @@ fn run(
 fn read_stdlib(
     global_env: &mut HashMap<String, StutterObject>,
 ) -> Result<StutterObject, String> {
-    let filename = "stdlib.lisp";
+    let home = env!("HOME");
+    let filename = format!("{}/.stutter/stdlib.lisp", home);
     let contents =
         fs::read_to_string(filename).expect("failed to read stdlib");
 
