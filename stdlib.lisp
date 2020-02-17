@@ -120,14 +120,28 @@
            (quicksort (filter (lambda (x) (>= x (head mylist)))
                               (tail mylist)))))))
 
-(def f
-  (lambda (x)
-    (let (y (head (list 3))) (z (add 5 6))
-      (let (w 8)
-        (+ w x y z)))))
-
 (def gcd
   (lambda (a b)
     (if (= 0 b)
       a
       (gcd b (mod a b)))))
+
+(def max
+  (lambda (l)
+    (let (rec-max (lambda (l acc)
+      (if (= 0 (len l))
+        acc
+        (if (> (head l) acc)
+          (rec-max (tail l) (head l))
+          (rec-max (tail l) acc)))))
+      (rec-max (tail l) (head l)))))
+
+(def min
+  (lambda (l)
+    (let (rec-min (lambda (l acc)
+      (if (= 0 (len l))
+        acc
+        (if (< (head l) acc)
+          (rec-min (tail l) (head l))
+          (rec-min (tail l) acc)))))
+      (rec-min (tail l) (head l)))))
