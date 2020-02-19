@@ -145,3 +145,10 @@
           (rec-min (tail l) (head l))
           (rec-min (tail l) acc)))))
       (rec-min (tail l) (head l)))))
+
+(def differential
+  (lambda (f x)
+    (/
+      (- (f (+ x 0.001))
+          (f x))
+      0.001)))
