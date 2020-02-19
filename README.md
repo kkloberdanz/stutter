@@ -19,7 +19,7 @@ An example of Stutter syntax can be seen below with the standard library impleme
 
 ```
 
-Or below is how one could implement the collatz conjecture (https://en.wikipedia.org/wiki/Collatz\_conjecture)
+Or below is how one could implement the collatz conjecture (https://en.wikipedia.org/wiki/Collatz_conjecture)
 ```lisp
 (def collatz
   (lambda (x)
