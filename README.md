@@ -35,14 +35,14 @@ Or below is how one could implement the collatz conjecture (https://en.wikipedia
 
 One can even to differential calculus with Stutter
 ```lisp
-(def differential
+(def deriv
   (lambda (f x)
     (/
       (- (f (+ x 0.001))
           (f x))
       0.001)))
 
-λ (differential (lambda (x) (pow x 3.0)) 5.0)
+λ (deriv (lambda (x) (pow x 3.0)) 5.0)
 75.01500100002545
 ```
 

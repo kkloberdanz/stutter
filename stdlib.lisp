@@ -146,9 +146,12 @@
           (rec-min (tail l) acc)))))
       (rec-min (tail l) (head l)))))
 
-(def differential
+(def deriv
   (lambda (f x)
     (/
       (- (f (+ x 0.001))
           (f x))
       0.001)))
+
+(def print
+  (lambda (x) (x)))
