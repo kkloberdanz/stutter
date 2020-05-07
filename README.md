@@ -61,8 +61,8 @@ Stutter represents integers with arbetrary precision, so you can do HUGE calcula
 
 Stutter is interactive, and includes a REPL for experimentation
 ```lisp
-λ (filter isprime (range 0 15))
-(3 5 7 11 13)
+λ (filter isprime (range 0 100))
+(2 3 5 7 11 13 17 19 23 29 31 37 41 43 47 53 59 61 67 71 73 79 83 89 97)
 ```
 
 With Stutter being a functional language, it is well suited for solving mathematical problems, such as those found on https://projecteuler.net/
