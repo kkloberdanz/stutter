@@ -3,6 +3,12 @@ Implementation for the Stutter Programming Language
 
 Stutter is a functional, lisp-like language
 
+To run, you must first put the stdlib in the correct directory
+```bash
+mkdir $HOME/.stutter
+cp stdlib.lisp $HOME/.stutter/stdlib.lisp
+```
+
 An example of Stutter syntax can be seen below with the standard library implementation of quicksort
 ```lisp
 (def quicksort

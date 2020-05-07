@@ -990,8 +990,11 @@ fn read_stdlib(
 ) -> Result<StutterObject, String> {
     let home = env!("HOME");
     let filename = format!("{}/.stutter/stdlib.lisp", home);
-    let contents =
-        fs::read_to_string(filename).expect("failed to read stdlib");
+    let err_msg = format!(
+        "FAILED TO READ STDLIB, PLEASE PUT STDLIB.LISP IN {}",
+        filename
+    );
+    let contents = fs::read_to_string(filename).expect(&err_msg);
 
     let mut num_lparen = 0;
     let mut num_rparen = 0;
