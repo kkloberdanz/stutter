@@ -123,14 +123,11 @@ impl fmt::Display for StutterObject {
             StutterObject::Id(s) => write!(f, "{}", s),
             StutterObject::Lambda(_l, _tree) => write!(f, "{}", "<lambda>"),
             StutterObject::List(vec) => {
-                let mut string = String::new();
-                for item in vec.iter() {
-                    if string.len() == 0 {
-                        string = format!("{}", item);
-                    } else {
-                        string = format!("{} {}", string, item);
-                    }
+                let mut string_vec = Vec::new();
+                for item in vec {
+                    string_vec.push(format!("{}", item));
                 }
+                let string = string_vec.join(" ");
                 write!(f, "({})", string)
             }
         }
