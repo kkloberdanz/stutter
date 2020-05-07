@@ -95,13 +95,15 @@
   (lambda (x)
     (if (<= x 1)
       False
-      (let (rec-isprime (lambda (x acc max_num)
-        (if (>= acc max_num)
-          True
-          (if (= 0 (mod x acc))
-            False
-            (rec-isprime x (+ 1 acc) max_num)))))
-        (rec-isprime x 2 (+ 1 (sqrt x)))))))
+      (if (= x 2)
+        True
+          (let (rec-isprime (lambda (x acc max_num)
+            (if (>= acc max_num)
+              True
+              (if (= 0 (mod x acc))
+                False
+                (rec-isprime x (+ 1 acc) max_num)))))
+        (rec-isprime x 2 (+ 1 (sqrt x))))))))
 
 (def map
   (lambda (f l)
