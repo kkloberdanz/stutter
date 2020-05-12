@@ -35,35 +35,35 @@ enum Input {
 
 #[derive(Clone, Debug, PartialEq)]
 enum Token {
-    Lparen,
-    Rparen,
-    Plus,
-    Minus,
-    Times,
-    Slash,
-    Percent,
-    Pow,
-    Gt,
-    Lt,
-    Eq,
-    Gte,
-    Lte,
-    Let,
-    Def,
-    List,
-    Index,
-    Drop,
-    Quote,
-    Append,
-    Range,
-    Cat,
-    Len,
-    Take,
-    If,
-    Int(BigInt),
-    Dec(f64),
-    Bool(bool),
-    Id(String),
+    Lparen,      // (
+    Rparen,      // )
+    Plus,        // +
+    Minus,       // -
+    Times,       // *
+    Slash,       // /
+    Percent,     // %
+    Pow,         // pow
+    Gt,          // >
+    Lt,          // <
+    Eq,          // =
+    Gte,         // >=
+    Lte,         // <=
+    Let,         // let
+    Def,         // def
+    List,        // list
+    Index,       // index
+    Drop,        // drop
+    Quote,       // quote
+    Append,      // append
+    Range,       // range
+    Cat,         // cat
+    Len,         // len
+    Take,        // take
+    If,          // if
+    Int(BigInt), // Integer literal
+    Dec(f64),    // Floating point literal
+    Bool(bool),  // Boolean literal
+    Id(String),  // identifier (variable name or function name)
 }
 
 #[derive(Clone, Debug, PartialEq)]
