@@ -70,3 +70,8 @@ With Stutter being a functional language, it is well suited for solving mathemat
 λ (sum (filter even (filter (lambda (x) (< x 4000000)) (fibonacci 1000))))
 4613732
 ```
+
+Try calculating the golden ratio using the fibonacci sequence!
+```lisp
+(last (map (lambda (x) (/ (head x) (last x))) (zip (tail (fibonacci 100.0)) (fibonacci 100.0))))
+```

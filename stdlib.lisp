@@ -157,3 +157,7 @@
 
 (def print
   (lambda (x) (x)))
+
+(def avg
+  (lambda (l)
+    (/ (sum l) (len l))))

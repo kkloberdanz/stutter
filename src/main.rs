@@ -464,7 +464,7 @@ fn apply_op(
         (StutterObject::Int(n1), StutterObject::Int(n2)) => match op {
             Op::Add => Ok(StutterObject::Int(n1 + n2)),
             Op::Sub => Ok(StutterObject::Int(n1 - n2)),
-            Op::Div => Ok(StutterObject::Int(n1 / n2)),
+            Op::Div => Ok(StutterObject::Dec(bigint_to_f64(&n1)? / bigint_to_f64(&n2)?)),
             Op::Mod => Ok(StutterObject::Int(n1 % n2)),
             Op::Pow => Ok(StutterObject::Int(pow(n1, bigint_to_usize(&n2)?))),
             Op::Mul => Ok(StutterObject::Int(n1 * n2)),
