@@ -130,29 +130,25 @@
 
 (def max
   (lambda (l)
-    (let (rec-max (lambda (l acc)
-      (if (= 0 (len l))
-        acc
-        (if (> (head l) acc)
-          (rec-max (tail l) (head l))
-          (rec-max (tail l) acc)))))
-      (rec-max (tail l) (head l)))))
+    (reduce (lambda (a b)
+      (if (> a b)
+        a
+        b))
+     (head l) (tail l))))
 
 (def min
   (lambda (l)
-    (let (rec-min (lambda (l acc)
-      (if (= 0 (len l))
-        acc
-        (if (< (head l) acc)
-          (rec-min (tail l) (head l))
-          (rec-min (tail l) acc)))))
-      (rec-min (tail l) (head l)))))
+    (reduce (lambda (a b)
+      (if (< a b)
+        a
+        b))
+     (head l) (tail l))))
 
 (def deriv
   (lambda (f x)
     (/
       (- (f (+ x 0.001))
-          (f x))
+        (f x))
       0.001)))
 
 (def print
