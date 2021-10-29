@@ -165,6 +165,9 @@ fn prompt_user(prompt: &String) -> Input {
         io::stdin()
             .read_line(&mut line)
             .expect("failed to read stdin");
+        if line == "" {
+            return Input::Quit;
+        }
         let as_string = &line.trim().to_string();
         let new_input = format!(" {} ", as_string);
         user_input += &new_input;
