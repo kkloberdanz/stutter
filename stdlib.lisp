@@ -157,3 +157,9 @@
 (def avg
   (lambda (l)
     (/ (sum l) (len l))))
+
+(def modset
+  (lambda (n)
+    (filter
+      (lambda (x) (= 1 (gcd x n)))
+      (range 1 n))))
