@@ -112,7 +112,14 @@ impl fmt::Display for StutterObject {
         match &*self {
             StutterObject::Nil => write!(f, "Nil"),
             StutterObject::Int(i) => write!(f, "{}", i.to_string()),
-            StutterObject::Real(d) => write!(f, "{}", d.to_string()),
+            StutterObject::Real(r) => {
+                let as_string = r.to_string();
+                if !as_string.contains(".") {
+                    write!(f, "{}.0", as_string)
+                } else {
+                    write!(f, "{}", as_string)
+                }
+            }
             StutterObject::Bool(b) => write!(
                 f,
                 "{}",
@@ -848,7 +855,7 @@ fn eval_branch(
                     let r = bigint_to_f64(i)?;
                     Ok(StutterObject::Real(r))
                 }
-                _ => Err(String::from("type error: expected form (len LIST)")),
+                _ => Err(String::from("type error: expected form (real INT)")),
             }
         }
         Op::Range => {
