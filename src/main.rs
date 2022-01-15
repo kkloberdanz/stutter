@@ -60,8 +60,9 @@ enum Token {
     Len,         // len
     Take,        // take
     If,          // if
+    ToReal,      // real
     Int(BigInt), // Integer literal
-    Dec(f64),    // Floating point literal
+    Real(f64),   // Floating point literal
     Bool(bool),  // Boolean literal
     Id(String),  // identifier (variable name or function name)
 }
@@ -91,6 +92,7 @@ enum Op {
     Len,
     Take,
     If,
+    ToReal,
     Func(String),
 }
 
@@ -98,7 +100,7 @@ enum Op {
 enum StutterObject {
     Nil,
     Int(BigInt),
-    Dec(f64),
+    Real(f64),
     Bool(bool),
     Id(String),
     Lambda(Vec<String>, ParseTree),
@@ -110,7 +112,7 @@ impl fmt::Display for StutterObject {
         match &*self {
             StutterObject::Nil => write!(f, "Nil"),
             StutterObject::Int(i) => write!(f, "{}", i.to_string()),
-            StutterObject::Dec(d) => write!(f, "{}", d.to_string()),
+            StutterObject::Real(d) => write!(f, "{}", d.to_string()),
             StutterObject::Bool(b) => write!(
                 f,
                 "{}",
@@ -187,7 +189,7 @@ fn to_token(s: &String) -> Token {
     if let Some(t) = BigInt::parse_bytes(bytes, 10) {
         Token::Int(t)
     } else if let Ok(t) = s.parse::<f64>() {
-        Token::Dec(t)
+        Token::Real(t)
     } else if let Ok(t) = s.parse::<bool>() {
         Token::Bool(t)
     } else {
@@ -217,6 +219,7 @@ fn to_token(s: &String) -> Token {
             "range" => Token::Range,
             "cat" => Token::Cat,
             "len" => Token::Len,
+            "real" => Token::ToReal,
             _ => Token::Id(s.to_string()),
         }
     }
@@ -226,7 +229,7 @@ fn token_to_stutterobject(tok: &Token) -> Result<StutterObject, String> {
     match tok {
         Token::Id(s) => Ok(StutterObject::Id(s.to_string())),
         Token::Int(i) => Ok(StutterObject::Int(i.clone())),
-        Token::Dec(f) => Ok(StutterObject::Dec(*f)),
+        Token::Real(f) => Ok(StutterObject::Real(*f)),
         Token::Bool(b) => Ok(StutterObject::Bool(*b)),
         _ => Err(format!("token: {:?} does not form a valid atom", tok)),
     }
@@ -254,6 +257,7 @@ fn token_to_op(tok: &Token) -> Result<Op, String> {
         Token::Drop => Ok(Op::Drop),
         Token::Quote => Ok(Op::Quote),
         Token::Append => Ok(Op::Append),
+        Token::ToReal => Ok(Op::ToReal),
         Token::Range => Ok(Op::Range),
         Token::Cat => Ok(Op::Cat),
         Token::Len => Ok(Op::Len),
@@ -467,7 +471,7 @@ fn apply_op(
         (StutterObject::Int(n1), StutterObject::Int(n2)) => match op {
             Op::Add => Ok(StutterObject::Int(n1 + n2)),
             Op::Sub => Ok(StutterObject::Int(n1 - n2)),
-            Op::Div => Ok(StutterObject::Dec(
+            Op::Div => Ok(StutterObject::Real(
                 bigint_to_f64(&n1)? / bigint_to_f64(&n2)?,
             )),
             Op::Mod => Ok(StutterObject::Int(n1 % n2)),
@@ -480,13 +484,13 @@ fn apply_op(
             Op::Lte => Ok(StutterObject::Bool(n1 <= n2)),
             _ => Err(format!("{:?} not implemented", op)),
         },
-        (StutterObject::Dec(f1), StutterObject::Dec(f2)) => match op {
-            Op::Add => Ok(StutterObject::Dec(f1 + f2)),
-            Op::Sub => Ok(StutterObject::Dec(f1 - f2)),
-            Op::Div => Ok(StutterObject::Dec(f1 / f2)),
-            Op::Mod => Ok(StutterObject::Dec(f1 % f2)),
-            Op::Pow => Ok(StutterObject::Dec(f1.powf(f2))),
-            Op::Mul => Ok(StutterObject::Dec(f1 * f2)),
+        (StutterObject::Real(f1), StutterObject::Real(f2)) => match op {
+            Op::Add => Ok(StutterObject::Real(f1 + f2)),
+            Op::Sub => Ok(StutterObject::Real(f1 - f2)),
+            Op::Div => Ok(StutterObject::Real(f1 / f2)),
+            Op::Mod => Ok(StutterObject::Real(f1 % f2)),
+            Op::Pow => Ok(StutterObject::Real(f1.powf(f2))),
+            Op::Mul => Ok(StutterObject::Real(f1 * f2)),
             Op::Gt => Ok(StutterObject::Bool(f1 > f2)),
             Op::Lt => Ok(StutterObject::Bool(f1 < f2)),
             Op::Eq => Ok(StutterObject::Bool(f1 == f2)),
@@ -494,13 +498,13 @@ fn apply_op(
             Op::Lte => Ok(StutterObject::Bool(f1 <= f2)),
             _ => Err(format!("{:?} not implemented", op)),
         },
-        (StutterObject::Int(n1), StutterObject::Dec(f2)) => match op {
-            Op::Add => Ok(StutterObject::Dec((bigint_to_f64(&n1)?) + f2)),
-            Op::Sub => Ok(StutterObject::Dec((bigint_to_f64(&n1)?) - f2)),
-            Op::Div => Ok(StutterObject::Dec((bigint_to_f64(&n1)?) / f2)),
-            Op::Mod => Ok(StutterObject::Dec((bigint_to_f64(&n1)?) % f2)),
-            Op::Pow => Ok(StutterObject::Dec((bigint_to_f64(&n1)?).powf(f2))),
-            Op::Mul => Ok(StutterObject::Dec((bigint_to_f64(&n1)?) * f2)),
+        (StutterObject::Int(n1), StutterObject::Real(f2)) => match op {
+            Op::Add => Ok(StutterObject::Real((bigint_to_f64(&n1)?) + f2)),
+            Op::Sub => Ok(StutterObject::Real((bigint_to_f64(&n1)?) - f2)),
+            Op::Div => Ok(StutterObject::Real((bigint_to_f64(&n1)?) / f2)),
+            Op::Mod => Ok(StutterObject::Real((bigint_to_f64(&n1)?) % f2)),
+            Op::Pow => Ok(StutterObject::Real((bigint_to_f64(&n1)?).powf(f2))),
+            Op::Mul => Ok(StutterObject::Real((bigint_to_f64(&n1)?) * f2)),
             Op::Gt => Ok(StutterObject::Bool((bigint_to_f64(&n1)?) > f2)),
             Op::Lt => Ok(StutterObject::Bool((bigint_to_f64(&n1)?) < f2)),
             Op::Eq => Ok(StutterObject::Bool((bigint_to_f64(&n1)?) == f2)),
@@ -508,13 +512,13 @@ fn apply_op(
             Op::Lte => Ok(StutterObject::Bool((bigint_to_f64(&n1)?) <= f2)),
             _ => Err(format!("{:?} not implemented", op)),
         },
-        (StutterObject::Dec(f1), StutterObject::Int(n2)) => match op {
-            Op::Add => Ok(StutterObject::Dec(f1 + (bigint_to_f64(&n2)?))),
-            Op::Sub => Ok(StutterObject::Dec(f1 - (bigint_to_f64(&n2)?))),
-            Op::Div => Ok(StutterObject::Dec(f1 / (bigint_to_f64(&n2)?))),
-            Op::Mod => Ok(StutterObject::Dec(f1 % (bigint_to_f64(&n2)?))),
-            Op::Pow => Ok(StutterObject::Dec(f1.powf(bigint_to_f64(&n2)?))),
-            Op::Mul => Ok(StutterObject::Dec(f1 * (bigint_to_f64(&n2)?))),
+        (StutterObject::Real(f1), StutterObject::Int(n2)) => match op {
+            Op::Add => Ok(StutterObject::Real(f1 + (bigint_to_f64(&n2)?))),
+            Op::Sub => Ok(StutterObject::Real(f1 - (bigint_to_f64(&n2)?))),
+            Op::Div => Ok(StutterObject::Real(f1 / (bigint_to_f64(&n2)?))),
+            Op::Mod => Ok(StutterObject::Real(f1 % (bigint_to_f64(&n2)?))),
+            Op::Pow => Ok(StutterObject::Real(f1.powf(bigint_to_f64(&n2)?))),
+            Op::Mul => Ok(StutterObject::Real(f1 * (bigint_to_f64(&n2)?))),
             Op::Gt => Ok(StutterObject::Bool(f1 > (bigint_to_f64(&n2)?))),
             Op::Lt => Ok(StutterObject::Bool(f1 < (bigint_to_f64(&n2)?))),
             Op::Eq => Ok(StutterObject::Bool(f1 == (bigint_to_f64(&n2)?))),
@@ -834,6 +838,17 @@ fn eval_branch(
                 _ => Err(String::from(
                     "type error: expected form (append ITEM LIST)",
                 )),
+            }
+        }
+        Op::ToReal => {
+            let v = resolve_exprs(&xs, &env, global_env)?;
+            let num = &v[0];
+            match num {
+                StutterObject::Int(i) => {
+                    let r = bigint_to_f64(i)?;
+                    Ok(StutterObject::Real(r))
+                }
+                _ => Err(String::from("type error: expected form (len LIST)")),
             }
         }
         Op::Range => {
