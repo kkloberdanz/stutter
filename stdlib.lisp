@@ -163,3 +163,7 @@
     (filter
       (lambda (x) (= 1 (gcd x n)))
       (range 1 n))))
+
+(def euler-phi
+  (lambda (n)
+    (len (modset n))))
