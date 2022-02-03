@@ -167,3 +167,10 @@
 (def euler-phi
   (lambda (n)
     (len (modset n))))
+
+(def factors
+  (lambda (n)
+    (filter
+      (lambda (x)
+        (let (quotient (/ n x)) (= (int quotient) quotient)))
+      (range 1 (+ 1 n)))))

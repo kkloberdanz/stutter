@@ -61,6 +61,7 @@ enum Token {
     Take,        // take
     If,          // if
     ToReal,      // real
+    ToInt,       // int
     Int(BigInt), // Integer literal
     Real(f64),   // Floating point literal
     Bool(bool),  // Boolean literal
@@ -93,6 +94,7 @@ enum Op {
     Take,
     If,
     ToReal,
+    ToInt,
     Func(String),
 }
 
@@ -227,6 +229,7 @@ fn to_token(s: &String) -> Token {
             "cat" => Token::Cat,
             "len" => Token::Len,
             "real" => Token::ToReal,
+            "int" => Token::ToInt,
             _ => Token::Id(s.to_string()),
         }
     }
@@ -265,6 +268,7 @@ fn token_to_op(tok: &Token) -> Result<Op, String> {
         Token::Quote => Ok(Op::Quote),
         Token::Append => Ok(Op::Append),
         Token::ToReal => Ok(Op::ToReal),
+        Token::ToInt => Ok(Op::ToInt),
         Token::Range => Ok(Op::Range),
         Token::Cat => Ok(Op::Cat),
         Token::Len => Ok(Op::Len),
@@ -461,7 +465,15 @@ fn i64_to_bigint(n: i64) -> Result<BigInt, String> {
     let opt_bi = n.to_bigint();
     match opt_bi {
         Some(bi) => Ok(bi),
-        None => Err(String::from("failed to represent usize as BigInt")),
+        None => Err(String::from("failed to represent i64 as BigInt")),
+    }
+}
+
+fn f64_to_bigint(n: f64) -> Result<BigInt, String> {
+    let opt_bi = n.to_bigint();
+    match opt_bi {
+        Some(bi) => Ok(bi),
+        None => Err(String::from("failed to represent f64 as BigInt")),
     }
 }
 
@@ -854,6 +866,17 @@ fn eval_branch(
                 StutterObject::Int(i) => {
                     let r = bigint_to_f64(i)?;
                     Ok(StutterObject::Real(r))
+                }
+                _ => Err(String::from("type error: expected form (real INT)")),
+            }
+        }
+        Op::ToInt => {
+            let v = resolve_exprs(&xs, &env, global_env)?;
+            let num = &v[0];
+            match num {
+                StutterObject::Real(r) => {
+                    let i = f64_to_bigint(*r)?;
+                    Ok(StutterObject::Int(i))
                 }
                 _ => Err(String::from("type error: expected form (real INT)")),
             }
