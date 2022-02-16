@@ -158,7 +158,7 @@
   (lambda (l)
     (/ (sum l) (len l))))
 
-(def modset
+(def equivalence-classes
   (lambda (n)
     (filter
       (lambda (x) (= 1 (gcd x n)))
@@ -166,7 +166,7 @@
 
 (def euler-phi
   (lambda (n)
-    (len (modset n))))
+    (len (equivalence-classes n))))
 
 (def factors
   (lambda (n)

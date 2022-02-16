@@ -883,6 +883,13 @@ fn eval_branch(
         }
         Op::Range => {
             let v = resolve_exprs(&xs, &env, global_env)?;
+            let len = v.len();
+            if len != 2 {
+                return Err(format!(
+                    "range expecting 2 arguments, got {}",
+                    len
+                ));
+            }
             let lower_bound = &v[0];
             let upper_bound = &v[1];
             match (lower_bound, upper_bound) {
