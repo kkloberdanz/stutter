@@ -2,7 +2,7 @@
 name = "stutter"
 version = "0.1.0"
 authors = ["Kyle Kloberdanz <kyle.g.kloberdanz@gmail.com>"]
-edition = "2021"
+edition = "2018"
 
 [dependencies]
 num-bigint = "0.4"

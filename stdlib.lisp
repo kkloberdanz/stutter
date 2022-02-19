@@ -174,3 +174,17 @@
       (lambda (x)
         (let (quotient (/ n x)) (= (int quotient) quotient)))
       (range 1 (+ 1 n)))))
+
+(def factorial
+  (lambda (x)
+    (if (> x 1)
+      (* x (factorial (- x 1)))
+      1)))
+
+(def sigma
+  (lambda (start end func)
+    (sum (map func (range start end)))))
+
+(def exp
+  (lambda (x)
+    (sigma 0 100 (lambda (k) (/ (pow x k) (factorial k))))))
