@@ -41,6 +41,7 @@ enum Token {
     Minus,       // -
     Times,       // *
     Slash,       // /
+    DoubleSlash, // //
     Percent,     // %
     Pow,         // pow
     Gt,          // >
@@ -74,6 +75,7 @@ enum Op {
     Sub,
     Mul,
     Div,
+    IntDiv,
     Mod,
     Pow,
     Gt,
@@ -209,6 +211,7 @@ fn to_token(s: &String) -> Token {
             "-" => Token::Minus,
             "*" => Token::Times,
             "/" => Token::Slash,
+            "//" => Token::DoubleSlash,
             "%" => Token::Percent,
             "pow" => Token::Pow,
             "<" => Token::Lt,
@@ -251,6 +254,7 @@ fn token_to_op(tok: &Token) -> Result<Op, String> {
         Token::Minus => Ok(Op::Sub),
         Token::Times => Ok(Op::Mul),
         Token::Slash => Ok(Op::Div),
+        Token::DoubleSlash => Ok(Op::IntDiv),
         Token::Percent => Ok(Op::Mod),
         Token::Pow => Ok(Op::Pow),
         Token::Gt => Ok(Op::Gt),
@@ -493,6 +497,7 @@ fn apply_op(
             Op::Div => Ok(StutterObject::Real(
                 bigint_to_f64(&n1)? / bigint_to_f64(&n2)?,
             )),
+            Op::IntDiv => Ok(StutterObject::Int(n1 / n2)),
             Op::Mod => Ok(StutterObject::Int(n1 % n2)),
             Op::Pow => Ok(StutterObject::Int(pow(n1, bigint_to_usize(&n2)?))),
             Op::Mul => Ok(StutterObject::Int(n1 * n2)),
@@ -762,6 +767,7 @@ fn eval_branch(
         | Op::Sub
         | Op::Mul
         | Op::Div
+        | Op::IntDiv
         | Op::Mod
         | Op::Eq
         | Op::Gt

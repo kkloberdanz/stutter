@@ -7,6 +7,7 @@
 (def sub (lambda (x y) (- x y)))
 (def mul (lambda (x y) (* x y)))
 (def div (lambda (x y) (/ x y)))
+(def intdiv (lambda (x y) (// x y)))
 (def mod (lambda (x y) (% x y)))
 (def sqrt (lambda (x) (pow x 0.5)))
 (def last_n (lambda (n l) (drop (- (len l) n) l)))
@@ -77,7 +78,7 @@
     (if (= 1 x)
       (list 1)
       (if (= 0 (mod x 2))
-        (cat (list x) (collatz (/ x 2)))
+        (cat (list x) (collatz (// x 2)))
         (cat (list x) (collatz (+ 1 (* 3 x))))))))
 
 (def fibonacci
