@@ -159,7 +159,7 @@
   (lambda (l)
     (/ (sum l) (len l))))
 
-(def equivalence-classes
+(def congruence-classes
   (lambda (n)
     (filter
       (lambda (x) (= 1 (gcd x n)))
@@ -167,7 +167,7 @@
 
 (def euler-phi
   (lambda (n)
-    (len (equivalence-classes n))))
+    (len (congruence-classes n))))
 
 (def factors
   (lambda (n)
