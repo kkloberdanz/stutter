@@ -189,3 +189,9 @@
 (def exp
   (lambda (x)
     (sigma 0 100 (lambda (k) (/ (pow x k) (factorial k))))))
+
+(def is-perfect-number
+  (lambda (x)
+    (=
+      x
+      (- (sum (factors x)) x))))

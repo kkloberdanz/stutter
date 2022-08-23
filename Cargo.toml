@@ -8,6 +8,7 @@ edition = "2018"
 num-bigint = "0.4"
 num-traits = "0.2"
 rpds = "0.11"
+structopt = "0.3.26"
 
 [profile.release]
 opt-level = 3

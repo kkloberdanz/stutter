@@ -26,6 +26,13 @@ use std::fmt;
 use std::fs;
 use std::io;
 use std::io::Write;
+use structopt::StructOpt;
+
+#[derive(Debug, StructOpt, Clone)]
+struct Opt {
+    #[structopt(short, long)]
+    quiet: bool,
+}
 
 enum Input {
     Quit,
@@ -1091,7 +1098,13 @@ fn read_stdlib(
 }
 
 fn main() {
-    let prompt = String::from("λ ");
+    let opt = Opt::from_args();
+    let quiet = opt.quiet;
+    let prompt = if quiet {
+        String::from("")
+    } else {
+        String::from("λ ")
+    };
     let mut global_env = HashMap::new();
     read_stdlib(&mut global_env).unwrap();
     loop {
