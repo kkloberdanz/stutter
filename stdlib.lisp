@@ -195,3 +195,7 @@
     (=
       x
       (- (sum (factors x)) x))))
+
+(def prime-factorization
+  (lambda (n)
+    (filter isprime (factors n))))
