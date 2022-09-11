@@ -199,3 +199,21 @@
 (def prime-factorization
   (lambda (n)
     (filter isprime (factors n))))
+
+(def all
+  (lambda (l)
+    (if (empty l)
+      True
+      (let (x (head l)) (xs (tail l))
+        (if (not x)
+          False
+          (all xs))))))
+
+(def any
+  (lambda (l)
+    (if (empty l)
+      False
+      (let (x (head l)) (xs (tail l))
+        (if x
+          True
+          (any xs))))))
