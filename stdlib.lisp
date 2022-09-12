@@ -48,19 +48,23 @@
             (rec-filter f xs acc))))))
       (rec-filter f l (list)))))
 
-(def reduce
+(def fold
   (lambda (f acc l)
     (if (empty l)
       acc
-      (reduce f (f acc (head l)) (tail l)))))
+      (fold f (f acc (head l)) (tail l)))))
+
+(def reduce
+  (lambda (f l)
+    (fold f (head l) (tail l))))
 
 (def sum
   (lambda (l)
-    (reduce add 0 l)))
+    (fold add 0 l)))
 
 (def product
   (lambda (l)
-    (reduce mul 1 l)))
+    (fold mul 1 l)))
 
 (def zip
   (lambda (l1 l2)
@@ -131,7 +135,7 @@
 
 (def max
   (lambda (l)
-    (reduce (lambda (a b)
+    (fold (lambda (a b)
       (if (> a b)
         a
         b))
@@ -139,7 +143,7 @@
 
 (def min
   (lambda (l)
-    (reduce (lambda (a b)
+    (fold (lambda (a b)
       (if (< a b)
         a
         b))
