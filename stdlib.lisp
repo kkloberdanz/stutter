@@ -60,11 +60,11 @@
 
 (def sum
   (lambda (l)
-    (fold add 0 l)))
+    (reduce add l)))
 
 (def product
   (lambda (l)
-    (fold mul 1 l)))
+    (reduce mul l)))
 
 (def zip
   (lambda (l1 l2)

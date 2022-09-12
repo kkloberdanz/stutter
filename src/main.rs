@@ -365,6 +365,13 @@ fn push_production(
 
 fn parse(tokens: &Vec<Token>) -> Result<ParseTree, String> {
     let mut stack = Vec::new();
+    if tokens.len() == 1 {
+        let tok = tokens[0].clone();
+        match tok {
+            Token::Id(_) => return Ok(ParseTree::Leaf(tok)),
+            _ => return Err(format!("syntax error, expected an expression",)),
+        }
+    }
     for tok in tokens.iter() {
         match tok {
             Token::Rparen => {
