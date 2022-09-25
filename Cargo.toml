@@ -2,12 +2,12 @@
 name = "stutter"
 version = "0.1.0"
 authors = ["Kyle Kloberdanz <kyle.g.kloberdanz@gmail.com>"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 num-bigint = "0.4"
 num-traits = "0.2"
-rpds = "0.11"
+rpds = "0.12"
 structopt = "0.3.26"
 
 [profile.release]
