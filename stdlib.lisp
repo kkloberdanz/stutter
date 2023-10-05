@@ -221,3 +221,7 @@
         (if x
           True
           (any xs))))))
+
+(def length
+  (lambda (l)
+    (len l)))
